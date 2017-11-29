@@ -1,0 +1,6 @@
+{
+  "mongodb": "mongodb://127.0.0.1:27017/bilive_server",
+  "path": "",
+  "hostname": "127.0.0.1",
+  "port": 10081
+}
