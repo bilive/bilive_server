@@ -1,46 +1,25 @@
-import * as http from 'http'
-import * as fs from 'fs'
-import * as ws from 'ws'
-import * as tools from './lib/tools'
-import { ApiKeyModel, apiKey } from './mongo/apikey'
-import { beatStormInfo, smallTVInfo, raffleInfo, lightenInfo } from './roomlistener'
-import { options } from './index'
+import fs from 'fs'
+import ws from 'ws'
+import http from 'http'
+import { randomBytes } from 'crypto'
+import tools from './lib/tools'
+import Options from './options'
 /**
  * WebSocket服务
  * 
- * @export
  * @class WSServer
  */
-export class WSServer {
-  private _wsServer: ws.Server
+class WSServer {
+  private _wsServer!: ws.Server
   private _clients: Map<string, Set<ws>> = new Map()
-  private _apiKeys: Map<string, apiKey> = new Map()
+  private _adminClient!: ws
   /**
-   * 启动WebSocket服务
+   * 启动HTTP以及WebSocket服务
    * 
    * @memberof WSServer
    */
   public async Start() {
-    await this._Loop()
     this._HttpServer()
-  }
-  /**
-   * 循环
-   * 
-   * @private
-   * @memberof WSServer
-   */
-  private async _Loop() {
-    let apiKeys = await ApiKeyModel.find().exec().catch(tools.Error)
-    if (apiKeys != null) {
-      apiKeys.forEach(apiKey => {
-        if (apiKey.status) this._apiKeys.set(apiKey.apiKey, apiKey)
-        if (!apiKey.status && this._apiKeys.has(apiKey.apiKey)) this._apiKeys.delete(apiKey.apiKey)
-      })
-    }
-    setTimeout(() => {
-      this._Loop()
-    }, 6e+4) // 60秒
   }
   /**
    * HTTP服务
@@ -49,25 +28,29 @@ export class WSServer {
    * @memberof Options
    */
   private _HttpServer() {
-    let server = http.createServer((req, res) => {
-      req.on('error', tools.Error)
-      res.on('error', tools.Error)
-      res.writeHead(200)
-      res.end('All glory to WebSockets!\n')
-    })
-    server.on('error', tools.Error)
-    if (options.path === '') {
-      server.listen(options.port, options.hostname === '' ? undefined : options.hostname, () => {
+    // 直接跳转到github.io, 为防以后变更使用302
+    const server = http.createServer((req, res) => {
+      req.on('error', error => tools.ErrorLog('req', error))
+      res.on('error', error => tools.ErrorLog('res', error))
+      res.writeHead(302, { 'Location': '//github.halaal.win/bilive_client/' })
+      res.end()
+    }).on('error', error => tools.ErrorLog('http', error))
+    // 监听地址优先支持Unix Domain Socket
+    const listen = Options._.server
+    if (listen.path === '') {
+      const host = process.env.HOST === undefined ? listen.hostname : process.env.HOST
+      const port = process.env.PORT === undefined ? listen.port : Number.parseInt(<string>process.env.PORT)
+      server.listen(port, host, () => {
         this._WebSocketServer(server)
-        tools.Log(`${options.hostname}:${options.port}`)
+        tools.Log(`已监听 ${host}:${port}`)
       })
     }
     else {
-      if (fs.existsSync(options.path)) fs.unlinkSync(options.path)
-      server.listen(options.path, () => {
-        fs.chmodSync(options.path, '666')
+      if (fs.existsSync(listen.path)) fs.unlinkSync(listen.path)
+      server.listen(listen.path, () => {
+        fs.chmodSync(listen.path, '666')
         this._WebSocketServer(server)
-        tools.Log(options.path)
+        tools.Log(`已监听 ${listen.path}`)
       })
     }
   }
@@ -81,65 +64,113 @@ export class WSServer {
   private _WebSocketServer(server: http.Server) {
     // 不知道子协议的具体用法
     this._wsServer = new ws.Server({
-      server: server,
-      handleProtocols: (protocols: string[]) => {
-        let protocol: string = protocols[0]
-        if (this._apiKeys.has(protocol)) return protocol
+      server,
+      verifyClient: (info: { origin: string, req: http.IncomingMessage, secure: boolean }) => {
+        const protocol = <string | undefined>info.req.headers['sec-websocket-protocol']
+        if (protocol === undefined) return false
+        const adminProtocol = Options._.server.protocol
+        const userData = Options._.user[protocol]
+        if (protocol === adminProtocol || (userData !== undefined && userData.status)) return true
         else return false
       }
     })
-    this._wsServer.on('connection', this._WsConnectionHandler.bind(this))
+    this._wsServer
+      .on('error', error => tools.ErrorLog('websocket', error))
+      .on('connection', (client: ws, req: http.IncomingMessage) => {
+        // 使用Nginx可能需要
+        const remoteAddress = req.headers['x-real-ip'] === undefined
+          ? `${req.connection.remoteAddress}:${req.connection.remotePort}`
+          : `${req.headers['x-real-ip']}:${req.headers['x-real-port']}`
+        const useragent = req.headers['user-agent']
+        tools.Log(`用户: ${client.protocol} 地址: ${remoteAddress} 已连接. user-agent: ${useragent}`)
+        const protocol = client.protocol
+        const adminProtocol = Options._.server.protocol
+        if (protocol === adminProtocol) this._AdminConnectionHandler(client, remoteAddress)
+        else this._WsConnectionHandler(client, remoteAddress)
+      })
     this._WebSocketPing()
+  }
+  /**
+   * 管理员连接
+   * 
+   * @private
+   * @param {ws} client
+   * @param {string} remoteAddress
+   * @memberof WSServer
+   */
+  private _AdminConnectionHandler(client: ws, remoteAddress: string) {
+    // 限制同时只能连接一个客户端
+    if (this._adminClient !== undefined) this._adminClient.close(1001, JSON.stringify({ cmd: 'close', msg: 'too many connections' }))
+    client
+      .on('error', err => {
+        delete tools.logs.onLog
+        this._destroyClient(client)
+        tools.ErrorLog(client.protocol, remoteAddress, err)
+      })
+      .on('close', (code, reason) => {
+        delete tools.logs.onLog
+        this._destroyClient(client)
+        tools.Log(`管理员 ${remoteAddress} 已断开`, code, reason)
+      })
+      .on('message', async (msg: string) => {
+        const message = await tools.JSONparse<adminMessage>(msg)
+        if (message !== undefined && message.cmd !== undefined && message.ts !== undefined) this._onCMD(message)
+        else this._sendtoadmin({ cmd: 'error', ts: 'error', msg: '消息格式错误' })
+      })
+    this._adminClient = client
+    // 日志
+    tools.logs.onLog = data => this._sendtoadmin({ cmd: 'log', ts: 'log', msg: data })
   }
   /**
    * 处理连接事件
    * 
    * @private
-   * @param {ws} client 
-   * @param {http.IncomingMessage} req 
+   * @param {ws} client
+   * @param {string} remoteAddress
    * @memberof WSServer
    */
-  private _WsConnectionHandler(client: ws, req: http.IncomingMessage) {
-    let remoteAddress = req.headers['x-real-ip'] == null ? `${req.connection.remoteAddress}:${req.connection.remotePort}` : `${req.headers['x-real-ip']}:${req.headers['x-real-port']}`
-      , useragent = req.headers['user-agent']
-      , apiKey = client.protocol
-    if (this._apiKeys.has(apiKey)) {
-      let apiData = <apiKey>this._apiKeys.get(apiKey)
-      // 分api存储
-      if (this._clients.has(apiKey)) {
-        let clients = this._clients.get(apiKey)
-        if (clients == null) clients = new Set([client])
-        else clients.add(client)
-      }
-      else {
-        let clients = new Set([client])
-        this._clients.set(apiKey, clients)
-      }
-      let destroy = () => {
-        client.close()
-        client.terminate()
-        client.removeAllListeners()
-        tools.Log('closed', apiKey, remoteAddress, useragent)
-      }
-      client
-        .on('close', () => {
-          destroy()
-          let clients = this._clients.get(apiKey)
-          if (clients != null) clients.delete(client)
-        })
-        .on('error', (data) => {
-          destroy()
-          tools.Error(data)
-        })
-      // 记录连接地址
-      tools.Log('connected', apiKey, remoteAddress, useragent)
-      // 连接成功消息
-      let message: message = {
-        cmd: 'sysmsg',
-        msg: apiData.welcome
-      }
-      client.send(JSON.stringify(message), error => { if (error != null) tools.Log(error) })
+  private _WsConnectionHandler(client: ws, remoteAddress: string) {
+    const protocol = client.protocol
+    const userData = Options._.user[protocol]
+    // 分protocol存储
+    if (this._clients.has(protocol)) {
+      const clients = <Set<ws>>this._clients.get(protocol)
+      clients.add(client)
     }
+    else {
+      const clients = new Set([client])
+      this._clients.set(protocol, clients)
+    }
+    client
+      .on('error', err => {
+        this._destroyClient(client)
+        tools.ErrorLog(protocol, remoteAddress, err)
+      })
+      .on('close', (code, reason) => {
+        this._destroyClient(client)
+        const clients = <Set<ws>>this._clients.get(protocol)
+        clients.delete(client)
+        if (clients.size === 0) this._clients.delete(protocol)
+        tools.Log(`${remoteAddress} 已断开`, code, reason)
+      })
+    // 连接成功消息
+    const welcome: message = {
+      cmd: 'sysmsg',
+      msg: userData.welcome
+    }
+    client.send(JSON.stringify(welcome), err => { if (err !== undefined) tools.ErrorLog(err) })
+  }
+  /**
+   * 销毁
+   *
+   * @private
+   * @param {ws} client
+   * @memberof WSServer
+   */
+  private _destroyClient(client: ws) {
+    client.close()
+    client.terminate()
+    client.removeAllListeners()
   }
   /**
    * Ping/Pong
@@ -159,85 +190,55 @@ export class WSServer {
    * 消息广播
    * 
    * @param {string} msg 
-   * @param {string} [apiKey] 
+   * @param {string} [protocol] 
    * @memberof WSServer
    */
-  public SysMsg(msg: string, apiKey?: string) {
-    let message: message = {
+  public SysMsg(msg: string, protocol?: string) {
+    const systemMessage: systemMessage = {
       cmd: 'sysmsg',
-      msg: msg
+      msg
     }
-    this._Broadcast(message, 'sysmsg', apiKey)
+    this._Broadcast(systemMessage, 'sysmsg', protocol)
   }
   /**
    * 节奏风暴
    * 
    * @param {beatStormInfo} beatStormInfo
-   * @param {string} [apiKey]
+   * @param {string} [protocol]
    * @memberof WSServer
    */
-  public BeatStorm(beatStormInfo: beatStormInfo, apiKey?: string) {
-    let message: message = {
-      cmd: 'beatStorm',
-      data: beatStormInfo
-    }
-    this._Broadcast(message, 'beatStorm', apiKey)
+  public BeatStorm(beatStormInfo: message, protocol?: string) {
+    this._Broadcast(beatStormInfo, 'beatStorm', protocol)
   }
   /**
    * 小电视
    * 
-   * @param {smallTVInfo} smallTVInfo
-   * @param {string} [apiKey]
+   * @param {raffleMessage} raffleMessage
+   * @param {string} [protocol]
    * @memberof WSServer
    */
-  public SmallTV(smallTVInfo: smallTVInfo, apiKey?: string) {
-    let message: message = {
-      cmd: 'smallTV',
-      data: smallTVInfo
-    }
-    this._Broadcast(message, 'smallTV', apiKey)
+  public SmallTV(raffleMessage: raffleMessage, protocol?: string) {
+    this._Broadcast(raffleMessage, 'smallTV', protocol)
   }
   /**
-   * 抽奖
+   * 抽奖raffle
    * 
-   * @param {raffleInfo} raffleInfo
-   * @param {string} [apiKey]
+   * @param {raffleMessage} raffleMessage
+   * @param {string} [protocol]
    * @memberof WSServer
    */
-  public Raffle(raffleInfo: raffleInfo, apiKey?: string) {
-    let message: message = {
-      cmd: 'raffle',
-      data: raffleInfo
-    }
-    this._Broadcast(message, 'raffle', apiKey)
+  public Raffle(raffleMessage: raffleMessage, protocol?: string) {
+    this._Broadcast(raffleMessage, 'raffle', protocol)
   }
   /**
-   * 快速抽奖
+   * 抽奖lottery
    * 
-   * @param {lightenInfo} lightenInfo
-   * @param {string} [apiKey]
+   * @param {lotteryMessage} lotteryMessage
+   * @param {string} [protocol]
    * @memberof WSServer
    */
-  public Lighten(lightenInfo: lightenInfo, apiKey?: string) {
-    let message: message = {
-      cmd: 'lighten',
-      data: lightenInfo
-    }
-    this._Broadcast(message, 'raffle', apiKey)
-  }
-  /**
-   * 调试模式
-   * 
-   * @param {debugInfo} debugInfo
-   * @param {string} [apiKey]
-   * @memberof WSServer
-   */
-  public Debug(debugInfo: debugInfo, apiKey?: string) {
-    let message: message = {
-      cmd: 'debug',
-      data: debugInfo
-    }
-    this._Broadcast(message, 'debug', apiKey)
+  public Lottery(lotteryMessage: message, protocol?: string) {
+    this._Broadcast(lotteryMessage, 'lottery', protocol)
   }
   /**
    * 广播消息
@@ -245,52 +246,165 @@ export class WSServer {
    * @private
    * @param {message} message 
    * @param {string} key 
-   * @param {string} [apikey] 
+   * @param {string} [protocol] 
    * @memberof WSServer
    */
-  private _Broadcast(message: message, key: string, apikey?: string) {
-    this._clients.forEach((clients, apiKey) => {
-      if (apikey != null && apikey !== apiKey) return
-      if (this._apiKeys.has(apiKey)) {
-        let apiData = <apiKey>this._apiKeys.get(apiKey)
-        if (apiData[key]) {
-          clients.forEach(client => {
-            if (client.readyState === ws.OPEN) client.send(JSON.stringify(message), error => { if (error != null) tools.Log(error) })
-          })
-        }
+  private _Broadcast(message: message, key: string, protocol?: string) {
+    this._clients.forEach((clients, userprotocol) => {
+      if (protocol !== undefined && protocol !== userprotocol) return
+      const userData = Options._.user[userprotocol]
+      if (userData !== undefined && (key === 'sysmsg' || userData[key])) {
+        clients.forEach(client => {
+          if (client.readyState === ws.OPEN) client.send(JSON.stringify(message), error => { if (error !== undefined) tools.Log(error) })
+        })
       }
     })
   }
+  /**
+   * 监听客户端发来的消息, CMD为关键字
+   * 
+   * @private
+   * @param {adminMessage} message 
+   * @memberof WSServer
+   */
+  private async _onCMD(message: adminMessage) {
+    const { cmd, ts } = message
+    switch (cmd) {
+      // 获取log
+      case 'getLog': {
+        const data = tools.logs.data
+        this._sendtoadmin({ cmd, ts, data })
+      }
+        break
+      // 获取设置
+      case 'getConfig': {
+        const data = Options._.config
+        this._sendtoadmin({ cmd, ts, data })
+      }
+        break
+      // 保存设置
+      case 'setConfig': {
+        const config = Options._.config
+        const sysmsg = config.sysmsg
+        const setConfig = <config>message.data || {}
+        let msg = ''
+        for (const i in config) {
+          if (typeof config[i] !== typeof setConfig[i]) {
+            // 一般都是自用, 做一个简单的验证就够了
+            msg = i + '参数错误'
+            break
+          }
+        }
+        if (msg === '') {
+          // 防止setConfig里有未定义属性, 不使用Object.assign
+          for (const i in config) config[i] = setConfig[i]
+          Options.save()
+          this._sendtoadmin({ cmd, ts, data: config })
+          if (sysmsg !== config.sysmsg) this.SysMsg(config.sysmsg)
+        }
+        else this._sendtoadmin({ cmd, ts, msg, data: config })
+      }
+        break
+      // 获取参数描述
+      case 'getInfo': {
+        const data = Options._.info
+        this._sendtoadmin({ cmd, ts, data })
+      }
+        break
+      // 获取uid
+      case 'getAllUID': {
+        const data = Object.keys(Options._.user)
+        this._sendtoadmin({ cmd, ts, data })
+      }
+        break
+      // 获取用户设置
+      case 'getUserData': {
+        const user = Options._.user
+        const getUID = message.uid
+        if (typeof getUID === 'string' && user[getUID] !== undefined) this._sendtoadmin({ cmd, ts, uid: getUID, data: user[getUID] })
+        else this._sendtoadmin({ cmd, ts, msg: '未知用户' })
+      }
+        break
+      // 保存用户设置
+      case 'setUserData': {
+        const user = Options._.user
+        const setUID = message.uid
+        if (setUID !== undefined && user[setUID] !== undefined) {
+          const userData = user[setUID]
+          const usermsg = userData.usermsg
+          const setUserData = <userData>message.data || {}
+          let msg = ''
+          for (const i in userData) {
+            if (typeof userData[i] !== typeof setUserData[i]) {
+              msg = i + '参数错误'
+              break
+            }
+          }
+          if (msg === '') {
+            for (const i in userData) { if (i !== 'userHash') userData[i] = setUserData[i] }
+            Options.save()
+            this._sendtoadmin({ cmd, ts, uid: setUID, data: userData })
+            // 删除已连接用户
+            if (!userData.status) {
+              if (this._clients.has(setUID)) {
+                const clients = <Set<ws>>this._clients.get(setUID)
+                clients.forEach(client => this._destroyClient(client))
+                this._clients.delete(setUID)
+              }
+            }
+            else if (usermsg !== userData.usermsg) this.SysMsg(userData.usermsg, setUID)
+          }
+          else this._sendtoadmin({ cmd, ts, uid: setUID, msg, data: userData })
+        }
+        else this._sendtoadmin({ cmd, ts, uid: setUID, msg: '未知用户' })
+      }
+        break
+      // 删除用户设置
+      case 'delUserData': {
+        const user = Options._.user
+        const delUID = message.uid
+        if (delUID !== undefined && user[delUID] !== undefined) {
+          const userData = user[delUID]
+          delete Options._.user[delUID]
+          Options.save()
+          this._sendtoadmin({ cmd, ts, uid: delUID, data: userData })
+          // 删除已连接用户
+          if (this._clients.has(delUID)) {
+            const clients = <Set<ws>>this._clients.get(delUID)
+            clients.forEach(client => this._destroyClient(client))
+            this._clients.delete(delUID)
+          }
+        }
+        else this._sendtoadmin({ cmd, ts, uid: delUID, msg: '未知用户' })
+      }
+        break
+      // 新建用户设置
+      case 'newUserData': {
+        // 虽然不能保证唯一性, 但是这都能重复的话可以去买彩票
+        const uid = randomBytes(16).toString('hex')
+        const data = Object.assign({}, Options._.newUserData)
+        data.userHash = uid
+        Options._.user[uid] = data
+        Options.save()
+        this._sendtoadmin({ cmd, ts, uid, data })
+      }
+        break
+      // 未知命令
+      default:
+        this._sendtoadmin({ cmd, ts, msg: '未知命令' })
+        break
+    }
+  }
+  /**
+   * 向客户端发送消息
+   * 
+   * @private
+   * @param {adminMessage} message 
+   * @memberof WebAPI
+   */
+  private _sendtoadmin(message: adminMessage) {
+    if (this._adminClient.readyState === ws.OPEN) this._adminClient.send(JSON.stringify(message))
+  }
 }
-/**
- * 消息格式
- * 
- * @interface message
- */
-interface message {
-  cmd: string
-  msg?: string
-  data?: smallTVInfo | beatStormInfo | raffleInfo | lightenInfo | debugInfo
-}
-/**
- * api消息格式
- * 
- * @interface message
- */
-interface apiMessage extends message {
-  apiKey?: string
-  key?: string
-  value?: string | boolean | number
-}
-/**
- * 远程调试
- * 
- * @export
- * @interface debugInfo
- */
-export interface debugInfo {
-  driver: string
-  url: string
-  method: string
-  body: string
-}
+
+export default WSServer

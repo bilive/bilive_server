@@ -1,6 +1,75 @@
 {
-  "mongodb": "mongodb://127.0.0.1:27017/bilive_server",
-  "path": "",
-  "hostname": "127.0.0.1",
-  "port": 10081
+  "server": {
+    "path": "",
+    "hostname": "",
+    "port": 20080,
+    "protocol": "admin"
+  },
+  "config": {
+    "liveOrigin": "https://live.bilibili.com",
+    "apiVCOrigin": "https://api.vc.bilibili.com",
+    "apiLiveOrigin": "https://api.live.bilibili.com",
+    "smallTVPathname": "/gift/v4/smalltv",
+    "rafflePathname": "/activity/v1/Raffle",
+    "lotteryPathname": "/lottery/v1/lottery",
+    "sysmsg": ""
+  },
+  "user": {},
+  "newUserData": {
+    "status": false,
+    "userHash": "",
+    "welcome": "已连接到服务器",
+    "usermsg": "",
+    "smallTV": false,
+    "raffle": false,
+    "lottery": false,
+    "beatStorm": false
+  },
+  "info": {
+    "sysmsg": {
+      "description": "系统广播",
+      "tip": "向全体用户发送广播",
+      "type": "string"
+    },
+    "status": {
+      "description": "开关",
+      "tip": "用户组设置的总开关, 关闭时该用户组无法连接",
+      "type": "boolean"
+    },
+    "userHash": {
+      "description": "用户子协议",
+      "tip": "作为protocol与服务器连接",
+      "type": "string"
+    },
+    "welcome": {
+      "description": "欢迎词",
+      "tip": "用户组内连接到服务器所返回的消息",
+      "type": "string"
+    },
+    "usermsg": {
+      "description": "用户广播",
+      "tip": "向该用户组下的所有用户发送广播",
+      "type": "string"
+    },
+    "smallTV": {
+      "description": "小电视抽奖",
+      "tip": "是否向该用户组发送小电视抽奖消息",
+      "type": "boolean"
+    },
+    "raffle": {
+      "description": "raffle类抽奖",
+      "tip": "是否向该用户组发送raffle类抽奖消息, 例如活动抽奖",
+      "type": "boolean"
+    },
+    "lottery": {
+      "description": "lottery类抽奖",
+      "tip": "是否向该用户组发送lottery类抽奖消息, 例如舰队抽奖",
+      "type": "boolean"
+    },
+    "beatStorm": {
+      "description": "节奏风暴",
+      "tip": "是否向该用户组发送节奏风暴消息",
+      "type": "boolean"
+    }
+  }
 }

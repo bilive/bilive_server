@@ -1,48 +1,56 @@
-import * as tools from './lib/tools'
+import db from './db'
+import tools from './lib/tools'
+import DMclient from './dm_client_re'
+import Options from './options'
 import { EventEmitter } from 'events'
-import { RoomListModel } from './mongo/roomlist'
-import { CommentClient } from './lib/comment_client'
-import { SYS_MSG, SYS_GIFT, SPECIAL_GIFT, TV_START, RAFFLE_START, LIGHTEN_START } from './lib/danmaku.type'
+import { Options as requestOptions } from 'request'
+
 /**
  * 监听房间消息
  * 
- * @export
  * @class RoomListener
  * @extends {EventEmitter}
  */
-export class RoomListener extends EventEmitter {
+class RoomListener extends EventEmitter {
   constructor() {
     super()
   }
   /**
    * 监控房间
    * 
-   * @type {Map<number, CommentClient>}
+   * @type {Map<number, DMclient>}
    * @memberof RoomListener
    */
-  public roomList: Map<number, CommentClient> = new Map()
+  public roomList: Map<number, DMclient> = new Map()
   /**
    * 开始监听
    * 
    * @memberof RoomListener
    */
-  public Start() {
-    this._AddDBRoom()
+  public async Start() {
+    const load = await db.roomList.load()
+    if (load === null) {
+      tools.Log('roomList was loaded')
+      this._AddDBRoom()
+    }
+    else tools.ErrorLog(load)
   }
   /**
    * 添加数据库内房间
    * 
    * @private
-   * @param {number} [beatStorm=0] 
-   * @param {number} [date=2.592e+9] 
+   * @param {number} [date=30 * 24 * 60 * 60 * 1000] 
    * @memberof RoomListener
    */
-  private async _AddDBRoom(beatStorm = 0, date = 2.592e+9) {
-    let roomList = await RoomListModel.find({ 'beatStorm': { '$gt': beatStorm }, 'updateTime': { '$gt': Date.now() - date } }).exec().catch(tools.Error)
-    if (roomList != null) {
-      let liveList: Set<number> = new Set()
-      roomList.forEach(room => liveList.add(room.roomID))
-      liveList.forEach(roomID => this.AddRoom(roomID))
+  private async _AddDBRoom(date = 30 * 24 * 60 * 60 * 1000) {
+    const roomList = await db.roomList.find<roomList>({ updateTime: { $gt: Date.now() - date } })
+    if (roomList instanceof Error) tools.ErrorLog('读取数据库失败', roomList)
+    else {
+      const liveList: Set<number> = new Set()
+      roomList.forEach(room => {
+        liveList.add(room.roomID)
+        this.AddRoom(room.roomID, room.masterID)
+      })
       this.roomList.forEach((commentClient, roomID) => {
         if (liveList.has(roomID)) return
         commentClient
@@ -51,78 +59,89 @@ export class RoomListener extends EventEmitter {
         this.roomList.delete(roomID)
       })
     }
-    setTimeout(() => {
-      this._AddDBRoom()
-    }, 6.048e+8) // 7天
+    setTimeout(() => this._AddDBRoom(), 7 * 24 * 60 * 60 * 1000)
   }
   /**
    * 添加直播房间
    * 
    * @param {number} roomID 
+   * @param {number} [userID=0] 
    * @memberof RoomListener
    */
-  public AddRoom(roomID: number) {
+  public async AddRoom(roomID: number, userID: number = 0) {
     if (this.roomList.has(roomID)) return
-    let commentClient = new CommentClient({ roomID, protocol: 'ws' })
+    if (userID === 0) userID = await this._getMasterID(roomID)
+    const commentClient = new DMclient({ roomID, userID, protocol: 'flash' })
     commentClient
-      .on('SPECIAL_GIFT', this._SpecialGiftHandler.bind(this))
-      .on('TV_START', this._SmallTVHandler.bind(this))
-      .on('RAFFLE_START', this._RaffleStartHandler.bind(this))
-      .on('LIGHTEN_START', this._LightenStartHandler.bind(this))
-      .Connect({ server: 'broadcastlv.chat.bilibili.com', port: 2244 })
+      .on('TV_START', dataJson => this._RaffleStartHandler(dataJson))
+      .on('RAFFLE_START', dataJson => this._RaffleStartHandler(dataJson))
+      .on('LOTTERY_START', dataJson => this._LotteryStartHandler(dataJson))
+      .on('GUARD_LOTTERY_START', dataJson => this._LotteryStartHandler(dataJson))
+      .on('SPECIAL_GIFT', dataJson => this._SpecialGiftHandler(dataJson))
+      .on('ALL_MSG', dataJson => {
+        switch (dataJson.cmd) {
+          case 'DANMU_MSG':
+          case 'SEND_GIFT':
+          case 'SYS_MSG':
+          case 'SYS_GIFT':
+          case 'COMBO_SEND':
+          case 'COMBO_END':
+          case 'WELCOME':
+          case 'WELCOME_GUARD':
+          case 'WELCOME_ACTIVITY':
+          case 'ENTRY_EFFECT':
+          case 'GUARD_BUY':
+          case 'GUARD_MSG':
+          case 'EVENT_CMD':
+          case 'RAFFLE_START':
+          case 'RAFFLE_END':
+          case 'NOTICE_MSG':
+          case 'TV_START':
+          case 'TV_END':
+          case 'EVENT_CMD':
+          case 'LOTTERY_START':
+          case 'GUARD_LOTTERY_START':
+          case 'SPECIAL_GIFT':
+          case 'PREPARING':
+          case 'LIVE':
+          // case 'MOBILE_LIVE':
+          case 'ROOM_SILENT_ON':
+          case 'ROOM_SILENT_OFF':
+          case 'ROOM_SHIELD':
+          case 'ROOM_BLOCK_MSG':
+          case 'ROOM_ADMINS':
+          case 'CHANGE_ROOM_INFO':
+          case 'WISH_BOTTLE':
+          case 'ACTIVITY_EVENT':
+          case 'WARNING':
+          case 'CUT_OFF':
+          case 'ROOM_LOCK':
+          case 'ROOM_RANK':
+          case 'PK_INVITE_INIT':
+          case 'PK_INVITE_REFUSE':
+          case 'PK_INVITE_CANCEL':
+          case 'PK_INVITE_FAIL':
+          case 'PK_INVITE_SWITCH_OPEN':
+          case 'PK_INVITE_SWITCH_CLOSE':
+          case 'PK_MATCH':
+          case 'PK_PRE':
+          case 'PK_START':
+          case 'PK_PROCESS':
+          case 'PK_END':
+          case 'PK_SETTLE':
+          case 'PK_CLICK_AGAIN':
+          case 'PK_AGAIN':
+          case 'PK_MIC_END':
+          case 'USER_TITLE_GET':
+          case 'DRAW_UPDATE':
+            break
+          default:
+            tools.Log(JSON.stringify(dataJson))
+            break
+        }
+      })
+      .Connect({ server: 'livecmt-2.bilibili.com', port: 2243 })
     this.roomList.set(roomID, commentClient)
-  }
-  /**
-   * 监听特殊礼物消息
-   * 
-   * @private
-   * @param {SPECIAL_GIFT} dataJson
-   * @memberof RoomListener
-   */
-  private _SpecialGiftHandler(dataJson: SPECIAL_GIFT) {
-    for (let giftID in dataJson.data) {
-      switch (giftID) {
-        case '39':
-          this._BeatStormHandler(dataJson)
-          break
-        default:
-          break
-      }
-    }
-  }
-  /**
-   * 监听节奏风暴消息
-   * 
-   * @private
-   * @param {SPECIAL_GIFT} dataJson
-   * @memberof RoomListener
-   */
-  private _BeatStormHandler(dataJson: SPECIAL_GIFT) {
-    let beatStormData = dataJson.data['39']
-    if (beatStormData.content != null) {
-      let beatStormInfo: beatStormInfo = {
-        roomID: dataJson._roomid,
-        content: beatStormData.content,
-        id: parseInt(beatStormData.id),
-        rawData: dataJson
-      }
-      this.emit('beatStorm', beatStormInfo)
-    }
-  }
-  /**
-   * 监听小电视消息
-   * 
-   * @private
-   * @param {TV_START} dataJson
-   * @memberof RoomListener
-   */
-  private _SmallTVHandler(dataJson: TV_START) {
-    let smallTVInfo: smallTVInfo = {
-      roomID: dataJson._roomid,
-      id: parseInt(dataJson.data.id),
-      rawData: dataJson.data.msg
-    }
-    this.emit('smallTV', smallTVInfo)
   }
   /**
    * 监听抽奖
@@ -132,76 +151,109 @@ export class RoomListener extends EventEmitter {
    * @memberof RoomListener
    */
   private _RaffleStartHandler(dataJson: RAFFLE_START) {
-    if (dataJson.data == null || dataJson.data.raffleId == null) return
-    let raffleInfo: raffleInfo = {
+    if (dataJson.data === undefined || dataJson.data.raffleId === undefined) return
+    const cmd = dataJson.data.type === 'small_tv' ? 'smallTV' : 'raffle'
+    const raffleMessage: raffleMessage = {
+      cmd,
       roomID: dataJson._roomid,
-      id: dataJson.data.raffleId,
-      rawData: dataJson
+      id: +dataJson.data.raffleId,
+      type: dataJson.data.type,
+      title: dataJson.data.title,
+      time: +dataJson.data.time,
+      max_time: +dataJson.data.max_time,
+      time_wait: +dataJson.data.time_wait
     }
-    this.emit('raffle', raffleInfo)
+    this.emit('raffle', raffleMessage)
   }
   /**
    * 监听快速抽奖
    * 
    * @private
-   * @param {LIGHTEN_START} dataJson
+   * @param {LOTTERY_START} dataJson
    * @memberof RoomListener
    */
-  private _LightenStartHandler(dataJson: LIGHTEN_START) {
-    if (dataJson.data == null || dataJson.data.lightenId == null) return
-    let lightenInfo: lightenInfo = {
+  private _LotteryStartHandler(dataJson: LOTTERY_START) {
+    if (dataJson.data === undefined || dataJson.data.id === undefined) return
+    const lotteryMessage: lotteryMessage = {
+      cmd: 'lottery',
       roomID: dataJson._roomid,
-      id: dataJson.data.lightenId,
-      rawData: dataJson
+      id: +dataJson.data.id,
+      type: dataJson.data.type,
+      title: '舰队抽奖',
+      time: +dataJson.data.lottery.time
     }
-    this.emit('lighten', lightenInfo)
+    this.emit('lottery', lotteryMessage)
+  }
+  /**
+   * 监听特殊礼物消息
+   * 
+   * @private
+   * @param {SPECIAL_GIFT} dataJson
+   * @memberof RoomListener
+   */
+  private _SpecialGiftHandler(dataJson: SPECIAL_GIFT) {
+    if (dataJson.data['39'] !== undefined) this._BeatStormHandler(dataJson)
+  }
+  /**
+   * 监听节奏风暴消息
+   * 
+   * @private
+   * @param {SPECIAL_GIFT} dataJson
+   * @memberof RoomListener
+   */
+  private _BeatStormHandler(dataJson: SPECIAL_GIFT) {
+    const beatStormData = dataJson.data['39']
+    // @ts-ignore
+    if (beatStormData.content !== undefined) {
+      const beatStormMessage: beatStormMessage = {
+        cmd: 'beatStorm',
+        roomID: dataJson._roomid,
+        id: +beatStormData.id,
+        type: 'beatStorm',
+        title: '节奏风暴',
+        // @ts-ignore
+        time: beatStormData.time
+      }
+      this.emit('beatStorm', beatStormMessage)
+    }
+  }
+  /**
+   * 写入数据库
+   * 
+   * @param {number} roomID 
+   * @param {string} cmd 
+   * @memberof RoomListener
+   */
+  public async UpdateDB(roomID: number, cmd: string) {
+    const $inc: { [index: string]: number } = {}
+    $inc[cmd] = 1
+    const roomInfo = await db.roomList.findOne<roomList>({ roomID })
+    let $set
+    if (!(roomInfo instanceof Error) && (roomInfo === null || roomInfo.masterID === 0)) {
+      const masterID = await this._getMasterID(roomID)
+      $set = { masterID, updateTime: Date.now() }
+    }
+    if ($set === undefined) $set = { updateTime: Date.now() }
+    const update = await db.roomList.update({ roomID }, { $inc, $set }, { upsert: true })
+    if (update instanceof Error) tools.ErrorLog('更新数据库失败', update)
+  }
+  /**
+   * 获取masterID
+   * 
+   * @private
+   * @param {number} roomID 
+   * @returns {Promise<number>} 
+   * @memberof RoomListener
+   */
+  private async _getMasterID(roomID: number): Promise<number> {
+    const getRoomInit: requestOptions = {
+      uri: `${Options._.config.apiLiveOrigin}/room/v1/Room/mobileRoomInit?id=${roomID}}`,
+      json: true
+    }
+    const roomInit = await tools.XHR<roomInit>(getRoomInit, 'Android')
+    if (roomInit !== undefined && roomInit.response.statusCode === 200)
+      return roomInit.body.data.uid
+    return 0
   }
 }
-/**
- * 节奏风暴信息
- * 
- * @export
- * @interface beatStormInfo
- */
-export interface beatStormInfo {
-  roomID: number
-  content: string
-  id: number
-  rawData: SPECIAL_GIFT
-}
-/**
- * 小电视信息
- * 
- * @export
- * @interface smallTVInfo
- */
-export interface smallTVInfo {
-  roomID: number
-  id: number
-  pathname?: string
-  rawData: SYS_MSG
-}
-/**
- * 抽奖信息
- * 
- * @export
- * @interface raffleInfo
- */
-export interface raffleInfo {
-  roomID: number
-  id: number
-  pathname?: string
-  rawData: SYS_GIFT | RAFFLE_START
-}
-/**
- * 快速抽奖信息
- * 
- * @export
- * @interface LightenInfo
- */
-export interface lightenInfo {
-  roomID: number
-  id: number
-  pathname?: string
-  rawData: SYS_GIFT | LIGHTEN_START
-}
+export default RoomListener

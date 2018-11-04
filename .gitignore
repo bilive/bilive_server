@@ -57,3 +57,12 @@ typings/
 # dotenv environment variables file
 .env
 
+# Private configs
+options
+
+# Build flies
+build
+.vscode
+*.js
+*.json
+!pacnage.json
