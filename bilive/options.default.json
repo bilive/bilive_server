@@ -7,11 +7,66 @@
   },
   "config": {
     "liveOrigin": "https://live.bilibili.com",
-    "apiVCOrigin": "https://api.vc.bilibili.com",
     "apiLiveOrigin": "https://api.live.bilibili.com",
+    "apiVCOrigin": "https://api.vc.bilibili.com",
     "smallTVPathname": "/gift/v4/smalltv",
     "rafflePathname": "/activity/v1/Raffle",
     "lotteryPathname": "/lottery/v1/lottery",
+    "excludeCMD": [
+      "DANMU_MSG",
+      "SEND_GIFT",
+      "SYS_MSG",
+      "SYS_GIFT",
+      "COMBO_SEND",
+      "COMBO_END",
+      "WELCOME",
+      "WELCOME_GUARD",
+      "WELCOME_ACTIVITY",
+      "ENTRY_EFFECT",
+      "GUARD_BUY",
+      "GUARD_MSG",
+      "EVENT_CMD",
+      "RAFFLE_START",
+      "RAFFLE_END",
+      "NOTICE_MSG",
+      "TV_START",
+      "TV_END",
+      "EVENT_CMD",
+      "LOTTERY_START",
+      "GUARD_LOTTERY_START",
+      "SPECIAL_GIFT",
+      "PREPARING",
+      "LIVE",
+      "ROOM_SILENT_ON",
+      "ROOM_SILENT_OFF",
+      "ROOM_SHIELD",
+      "ROOM_BLOCK_MSG",
+      "ROOM_ADMINS",
+      "CHANGE_ROOM_INFO",
+      "WISH_BOTTLE",
+      "ACTIVITY_EVENT",
+      "WARNING",
+      "CUT_OFF",
+      "ROOM_LOCK",
+      "ROOM_RANK",
+      "PK_INVITE_INIT",
+      "PK_INVITE_REFUSE",
+      "PK_INVITE_CANCEL",
+      "PK_INVITE_FAIL",
+      "PK_INVITE_SWITCH_OPEN",
+      "PK_INVITE_SWITCH_CLOSE",
+      "PK_MATCH",
+      "PK_PRE",
+      "PK_START",
+      "PK_PROCESS",
+      "PK_END",
+      "PK_SETTLE",
+      "PK_CLICK_AGAIN",
+      "PK_AGAIN",
+      "PK_MIC_END",
+      "USER_TITLE_GET",
+      "DRAW_UPDATE"
+    ],
     "sysmsg": ""
   },
   "user": {},
@@ -26,6 +81,41 @@
     "beatStorm": false
   },
   "info": {
+    "liveOrigin": {
+      "description": "直播首页",
+      "tip": "直播首页地址",
+      "type": "string"
+    },
+    "apiLiveOrigin": {
+      "description": "直播API",
+      "tip": "直播API地址",
+      "type": "string"
+    },
+    "apiVCOrigin": {
+      "description": "直播消息API",
+      "tip": "直播消息API地址",
+      "type": "string"
+    },
+    "smallTVPathname": {
+      "description": "小电视路径",
+      "tip": "小电视抽奖路径",
+      "type": "string"
+    },
+    "rafflePathname": {
+      "description": "raffle路径",
+      "tip": "raffle抽奖路径",
+      "type": "string"
+    },
+    "lotteryPathname": {
+      "description": "lottery路径",
+      "tip": "lottery抽奖路径",
+      "type": "string"
+    },
+    "excludeCMD": {
+      "description": "排除消息",
+      "tip": "日志上排除的房间消息",
+      "type": "stringArray"
+    },
     "sysmsg": {
       "description": "系统广播",
       "tip": "向全体用户发送广播",

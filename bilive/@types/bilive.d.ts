@@ -20,13 +20,14 @@ interface server {
   protocol: string
 }
 interface config {
-  [index: string]: string
+  [index: string]: string | string[]
   liveOrigin: string
   apiVCOrigin: string
   apiLiveOrigin: string
   smallTVPathname: string
   rafflePathname: string
   lotteryPathname: string
+  excludeCMD: string[]
   sysmsg: string
 }
 interface userCollection {
@@ -45,6 +46,13 @@ interface userData {
 }
 interface optionsInfo {
   [index: string]: configInfoData
+  liveOrigin: configInfoData
+  apiVCOrigin: configInfoData
+  apiLiveOrigin: configInfoData
+  smallTVPathname: configInfoData
+  rafflePathname: configInfoData
+  lotteryPathname: configInfoData
+  excludeCMD: configInfoData
   sysmsg: configInfoData
   status: configInfoData
   userHash: configInfoData

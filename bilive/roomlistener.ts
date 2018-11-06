@@ -79,66 +79,7 @@ class RoomListener extends EventEmitter {
       .on('GUARD_LOTTERY_START', dataJson => this._LotteryStartHandler(dataJson))
       .on('SPECIAL_GIFT', dataJson => this._SpecialGiftHandler(dataJson))
       .on('ALL_MSG', dataJson => {
-        switch (dataJson.cmd) {
-          case 'DANMU_MSG':
-          case 'SEND_GIFT':
-          case 'SYS_MSG':
-          case 'SYS_GIFT':
-          case 'COMBO_SEND':
-          case 'COMBO_END':
-          case 'WELCOME':
-          case 'WELCOME_GUARD':
-          case 'WELCOME_ACTIVITY':
-          case 'ENTRY_EFFECT':
-          case 'GUARD_BUY':
-          case 'GUARD_MSG':
-          case 'EVENT_CMD':
-          case 'RAFFLE_START':
-          case 'RAFFLE_END':
-          case 'NOTICE_MSG':
-          case 'TV_START':
-          case 'TV_END':
-          case 'EVENT_CMD':
-          case 'LOTTERY_START':
-          case 'GUARD_LOTTERY_START':
-          case 'SPECIAL_GIFT':
-          case 'PREPARING':
-          case 'LIVE':
-          // case 'MOBILE_LIVE':
-          case 'ROOM_SILENT_ON':
-          case 'ROOM_SILENT_OFF':
-          case 'ROOM_SHIELD':
-          case 'ROOM_BLOCK_MSG':
-          case 'ROOM_ADMINS':
-          case 'CHANGE_ROOM_INFO':
-          case 'WISH_BOTTLE':
-          case 'ACTIVITY_EVENT':
-          case 'WARNING':
-          case 'CUT_OFF':
-          case 'ROOM_LOCK':
-          case 'ROOM_RANK':
-          case 'PK_INVITE_INIT':
-          case 'PK_INVITE_REFUSE':
-          case 'PK_INVITE_CANCEL':
-          case 'PK_INVITE_FAIL':
-          case 'PK_INVITE_SWITCH_OPEN':
-          case 'PK_INVITE_SWITCH_CLOSE':
-          case 'PK_MATCH':
-          case 'PK_PRE':
-          case 'PK_START':
-          case 'PK_PROCESS':
-          case 'PK_END':
-          case 'PK_SETTLE':
-          case 'PK_CLICK_AGAIN':
-          case 'PK_AGAIN':
-          case 'PK_MIC_END':
-          case 'USER_TITLE_GET':
-          case 'DRAW_UPDATE':
-            break
-          default:
-            tools.Log(JSON.stringify(dataJson))
-            break
-        }
+        if (!Options._.config.excludeCMD.includes(dataJson.cmd)) tools.Log(JSON.stringify(dataJson))
       })
       .Connect({ server: 'livecmt-2.bilibili.com', port: 2243 })
     this.roomList.set(roomID, commentClient)
