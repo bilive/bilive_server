@@ -3,7 +3,7 @@
  *******************/
 /**
  * 应用设置
- * 
+ *
  * @interface options
  */
 interface options {
@@ -127,7 +127,7 @@ declare enum appStatus {
 }
 /**
  * 公钥返回
- * 
+ *
  * @interface getKeyResponse
  */
 interface getKeyResponse {
@@ -141,7 +141,7 @@ interface getKeyResponseData {
 }
 /**
  * 验证返回
- * 
+ *
  * @interface authResponse
  */
 interface authResponse {
@@ -173,7 +173,7 @@ interface authResponseTokeninfo {
 }
 /**
  * 注销返回
- * 
+ *
  * @interface revokeResponse
  */
 interface revokeResponse {
@@ -234,9 +234,9 @@ interface captchaResponseError {
  *******************/
 /**
  * XHR返回
- * 
+ *
  * @interface response
- * @template T 
+ * @template T
  */
 interface XHRresponse<T> {
   response: {
@@ -246,7 +246,7 @@ interface XHRresponse<T> {
 }
 /**
  * Server酱
- * 
+ *
  * @interface serverChan
  */
 interface serverChan {
@@ -275,7 +275,7 @@ interface roomList {
  *******************/
 /**
  * 消息格式
- * 
+ *
  * @interface raffleMessage
  */
 interface raffleMessage {
@@ -290,7 +290,7 @@ interface raffleMessage {
 }
 /**
  * 消息格式
- * 
+ *
  * @interface lotteryMessage
  */
 interface lotteryMessage {
@@ -303,7 +303,7 @@ interface lotteryMessage {
 }
 /**
  * 消息格式
- * 
+ *
  * @interface beatStormMessage
  */
 interface beatStormMessage {
@@ -316,7 +316,7 @@ interface beatStormMessage {
 }
 /**
  * 消息格式
- * 
+ *
  * @interface systemMessage
  */
 interface systemMessage {
@@ -329,7 +329,7 @@ type message = raffleMessage | lotteryMessage | beatStormMessage | systemMessage
  *******************/
 /**
  * 抽奖raffle检查
- * 
+ *
  * @interface raffleCheck
  */
 interface raffleCheck {
@@ -364,7 +364,7 @@ interface raffleCheckDataListFromuser {
 }
 /**
  * 抽奖lottery检查
- * 
+ *
  * @interface lotteryCheck
  */
 interface lotteryCheck {
@@ -409,7 +409,7 @@ interface lotteryCheckDataSender {
 }
 /**
  * 获取直播列表
- * 
+ *
  * @interface getAllList
  */
 interface getAllList {
@@ -476,7 +476,7 @@ interface getAllListDataRoomList {
  *******************/
 /**
  * 房间信息
- * 
+ *
  * @interface roomInit
  */
 interface roomInit {

@@ -1,9 +1,17 @@
 import fs from 'fs'
 import util from 'util'
+import { EventEmitter } from 'events'
 const FSwriteFile = util.promisify(fs.writeFile)
 
-class Options {
+/**
+ *
+ *
+ * @class Options
+ * @extends {EventEmitter}
+ */
+class Options extends EventEmitter {
   constructor() {
+    super()
     // 根据npm start参数不同设置不同路径
     this._dirname = __dirname + (process.env.npm_package_scripts_start === 'node build/app.js' ? '/../..' : '/..')
     // 检查是否有options目录

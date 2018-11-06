@@ -4,9 +4,9 @@ import request from 'request'
 import Options from '../options'
 /**
  * 请求头
- * 
- * @param {string} platform 
- * @returns {request.Headers} 
+ *
+ * @param {string} platform
+ * @returns {request.Headers}
  */
 function getHeaders(platform: string): request.Headers {
   switch (platform) {
@@ -39,11 +39,11 @@ function getHeaders(platform: string): request.Headers {
 }
 /**
  * 添加request头信息
- * 
- * @template T 
- * @param {request.OptionsWithUri} options 
- * @param {('PC' | 'Android' | 'WebView')} [platform='PC'] 
- * @returns {Promise<response<T> | undefined>} 
+ *
+ * @template T
+ * @param {request.OptionsWithUri} options
+ * @param {('PC' | 'Android' | 'WebView')} [platform='PC']
+ * @returns {Promise<response<T> | undefined>}
  */
 function XHR<T>(options: request.OptionsWithUri, platform: 'PC' | 'Android' | 'WebView' = 'PC'): Promise<XHRresponse<T> | undefined> {
   return new Promise<XHRresponse<T> | undefined>(resolve => {
@@ -65,11 +65,11 @@ function XHR<T>(options: request.OptionsWithUri, platform: 'PC' | 'Android' | 'W
 }
 /**
  * 格式化JSON
- * 
- * @template T 
- * @param {string} text 
- * @param {((key: any, value: any) => any)} [reviver] 
- * @returns {Promise<T | undefined>} 
+ *
+ * @template T
+ * @param {string} text
+ * @param {((key: any, value: any) => any)} [reviver]
+ * @returns {Promise<T | undefined>}
  */
 function JSONparse<T>(text: string, reviver?: ((key: any, value: any) => any)): Promise<T | undefined> {
   return new Promise<T | undefined>(resolve => {
@@ -79,24 +79,24 @@ function JSONparse<T>(text: string, reviver?: ((key: any, value: any) => any)): 
     }
     catch (error) {
       ErrorLog('JSONparse', error)
-      return resolve(undefined)
+      return resolve()
     }
   })
 }
 /**
  * Hash
- * 
- * @param {string} algorithm 
- * @param {(string | Buffer)} data 
- * @returns {string} 
+ *
+ * @param {string} algorithm
+ * @param {(string | Buffer)} data
+ * @returns {string}
  */
 function Hash(algorithm: string, data: string | Buffer): string {
   return crypto.createHash(algorithm).update(data).digest('hex')
 }
 /**
  * 格式化输出, 配合PM2凑合用
- * 
- * @param {...any[]} message 
+ *
+ * @param {...any[]} message
  */
 function Log(...message: any[]) {
   const log = util.format(`${new Date().toString().slice(4, 24)} :`, ...message)
@@ -110,15 +110,15 @@ const logs: { data: string[], onLog?: (data: string) => void } = {
 }
 /**
  * 格式化输出, 配合PM2凑合用
- * 
- * @param {...any[]} message 
+ *
+ * @param {...any[]} message
  */
 function ErrorLog(...message: any[]) {
   console.error(`${new Date().toString().slice(4, 24)} :`, ...message)
 }
 /**
  * sleep
- * 
+ *
  * @param {number} ms
  * @returns {Promise<'sleep'>}
  */

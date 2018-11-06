@@ -6,7 +6,7 @@ import tools from './lib/tools'
 import Options from './options'
 /**
  * WebSocket服务
- * 
+ *
  * @class WSServer
  */
 class WSServer {
@@ -15,7 +15,7 @@ class WSServer {
   private _adminClient!: ws
   /**
    * 启动HTTP以及WebSocket服务
-   * 
+   *
    * @memberof WSServer
    */
   public async Start() {
@@ -23,7 +23,7 @@ class WSServer {
   }
   /**
    * HTTP服务
-   * 
+   *
    * @private
    * @memberof Options
    */
@@ -56,9 +56,9 @@ class WSServer {
   }
   /**
    * WebSocket服务
-   * 
+   *
    * @private
-   * @param {http.Server} server 
+   * @param {http.Server} server
    * @memberof WSServer
    */
   private _WebSocketServer(server: http.Server) {
@@ -88,11 +88,11 @@ class WSServer {
         if (protocol === adminProtocol) this._AdminConnectionHandler(client, remoteAddress)
         else this._WsConnectionHandler(client, remoteAddress)
       })
-    this._WebSocketPing()
+    setInterval(() => this._WebSocketPing(), 60 * 1000)
   }
   /**
    * 管理员连接
-   * 
+   *
    * @private
    * @param {ws} client
    * @param {string} remoteAddress
@@ -123,7 +123,7 @@ class WSServer {
   }
   /**
    * 处理连接事件
-   * 
+   *
    * @private
    * @param {ws} client
    * @param {string} remoteAddress
@@ -174,7 +174,7 @@ class WSServer {
   }
   /**
    * Ping/Pong
-   * 
+   *
    * @private
    * @memberof WSServer
    */
@@ -182,15 +182,12 @@ class WSServer {
     this._wsServer.clients.forEach(client => {
       if (client.readyState === ws.OPEN) client.ping()
     })
-    setTimeout(() => {
-      this._WebSocketPing()
-    }, 6e+4) // 60秒
   }
   /**
    * 消息广播
-   * 
-   * @param {string} msg 
-   * @param {string} [protocol] 
+   *
+   * @param {string} msg
+   * @param {string} [protocol]
    * @memberof WSServer
    */
   public SysMsg(msg: string, protocol?: string) {
@@ -202,7 +199,7 @@ class WSServer {
   }
   /**
    * 节奏风暴
-   * 
+   *
    * @param {beatStormInfo} beatStormInfo
    * @param {string} [protocol]
    * @memberof WSServer
@@ -212,7 +209,7 @@ class WSServer {
   }
   /**
    * 小电视
-   * 
+   *
    * @param {raffleMessage} raffleMessage
    * @param {string} [protocol]
    * @memberof WSServer
@@ -222,7 +219,7 @@ class WSServer {
   }
   /**
    * 抽奖raffle
-   * 
+   *
    * @param {raffleMessage} raffleMessage
    * @param {string} [protocol]
    * @memberof WSServer
@@ -232,7 +229,7 @@ class WSServer {
   }
   /**
    * 抽奖lottery
-   * 
+   *
    * @param {lotteryMessage} lotteryMessage
    * @param {string} [protocol]
    * @memberof WSServer
@@ -242,11 +239,11 @@ class WSServer {
   }
   /**
    * 广播消息
-   * 
+   *
    * @private
-   * @param {message} message 
-   * @param {string} key 
-   * @param {string} [protocol] 
+   * @param {message} message
+   * @param {string} key
+   * @param {string} [protocol]
    * @memberof WSServer
    */
   private _Broadcast(message: message, key: string, protocol?: string) {
@@ -262,9 +259,9 @@ class WSServer {
   }
   /**
    * 监听客户端发来的消息, CMD为关键字
-   * 
+   *
    * @private
-   * @param {adminMessage} message 
+   * @param {adminMessage} message
    * @memberof WSServer
    */
   private async _onCMD(message: adminMessage) {
@@ -397,9 +394,9 @@ class WSServer {
   }
   /**
    * 向客户端发送消息
-   * 
+   *
    * @private
-   * @param {adminMessage} message 
+   * @param {adminMessage} message
    * @memberof WebAPI
    */
   private _sendtoadmin(message: adminMessage) {

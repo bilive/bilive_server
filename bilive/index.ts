@@ -3,7 +3,7 @@ import Listener from './listener'
 
 /**
  * 主程序
- * 
+ *
  * @export
  * @class BiLive
  */
@@ -14,7 +14,7 @@ class BiLive {
   private _WSServer!: WSServer
   /**
    * 开始主程序
-   * 
+   *
    * @memberof BiLive
    */
   public async Start() {
@@ -25,7 +25,7 @@ class BiLive {
   }
   /**
    * 监听系统消息
-   * 
+   *
    * @memberof BiLive
    */
   public Listener() {
