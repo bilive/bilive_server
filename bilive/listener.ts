@@ -7,7 +7,7 @@ import RoomListener from './roomlistener'
 import Options from './options'
 /**
  * 监听服务器消息
- * 
+ *
  * @class Listener
  * @extends {EventEmitter}
  */
@@ -17,7 +17,7 @@ class Listener extends EventEmitter {
   }
   /**
    * 用于接收弹幕消息
-   * 
+   *
    * @private
    * @type {Map<number, DMclient>}
    * @memberof Listener
@@ -73,7 +73,7 @@ class Listener extends EventEmitter {
   private _lastUpdate: number = Date.now()
   /**
    * 房间监听
-   * 
+   *
    * @private
    * @type {RoomListener}
    * @memberof Listener
@@ -81,7 +81,7 @@ class Listener extends EventEmitter {
   private _RoomListener!: RoomListener
   /**
    * 开始监听
-   * 
+   *
    * @memberof Listener
    */
   public Start() {
@@ -91,9 +91,10 @@ class Listener extends EventEmitter {
     // 房间
     this._RoomListener = new RoomListener()
     this._RoomListener
-      .on('beatStorm', beatStormMessage => this._BeatStormHandler(beatStormMessage))
-      .on('raffle', raffleMessage => this._RaffleHandler(raffleMessage))
-      .on('lottery', lotteryMessage => this._RaffleHandler(lotteryMessage))
+      .on('smallTV', (raffleMessage: raffleMessage) => this._RaffleHandler(raffleMessage))
+      .on('raffle', (raffleMessage: raffleMessage) => this._RaffleHandler(raffleMessage))
+      .on('lottery', (lotteryMessage: lotteryMessage) => this._RaffleHandler(lotteryMessage))
+      .on('beatStorm', (beatStormMessage: beatStormMessage) => this._RaffleHandler(beatStormMessage))
       .Start()
   }
   /**
@@ -147,7 +148,7 @@ class Listener extends EventEmitter {
   }
   /**
    * 监听弹幕系统消息
-   * 
+   *
    * @private
    * @param {SYS_MSG} dataJson
    * @memberof Listener
@@ -161,7 +162,7 @@ class Listener extends EventEmitter {
   }
   /**
    * 监听系统礼物消息
-   * 
+   *
    * @private
    * @param {SYS_GIFT} dataJson
    * @memberof Listener
@@ -175,10 +176,10 @@ class Listener extends EventEmitter {
   }
   /**
    * 检查房间抽奖raffle信息
-   * 
+   *
    * @private
-   * @param {string} url 
-   * @param {number} roomID 
+   * @param {string} url
+   * @param {number} roomID
    * @memberof Listener
    */
   private async _RaffleCheck(url: string, roomID: number) {
@@ -208,10 +209,10 @@ class Listener extends EventEmitter {
   }
   /**
    * 检查房间抽奖lottery信息
-   * 
+   *
    * @private
-   * @param {string} url 
-   * @param {number} roomID 
+   * @param {string} url
+   * @param {number} roomID
    * @memberof Listener
    */
   // @ts-ignore 暂时无用
@@ -238,12 +239,12 @@ class Listener extends EventEmitter {
   }
   /**
    * 监听抽奖消息
-   * 
+   *
    * @private
-   * @param {raffleMessage | lotteryMessage} raffleMessage 
+   * @param {raffleMessage | lotteryMessage | beatStormMessage} raffleMessage
    * @memberof Listener
    */
-  private _RaffleHandler(raffleMessage: raffleMessage | lotteryMessage) {
+  private _RaffleHandler(raffleMessage: raffleMessage | lotteryMessage | beatStormMessage) {
     const { cmd, id, roomID } = raffleMessage
     switch (cmd) {
       case 'smallTV':
@@ -258,6 +259,10 @@ class Listener extends EventEmitter {
         if (this._lotteryID.has(id)) return
         this._lotteryID.add(id)
         break
+      case 'beatStorm':
+        if (this._beatStormID.has(id)) return
+        this._beatStormID.add(id)
+        break
       default:
         return
     }
@@ -267,23 +272,6 @@ class Listener extends EventEmitter {
     this._RoomListener.AddRoom(roomID)
     tools.Log(`房间 ${roomID} 开启了第 ${id} 轮${raffleMessage.title}`)
     this._RoomListener.UpdateDB(roomID, cmd)
-  }
-  /**
-   * 监听节奏风暴消息
-   * 
-   * @private
-   * @param {beatStormMessage} beatStormMessage 
-   * @memberof Listener
-   */
-  private _BeatStormHandler(beatStormMessage: beatStormMessage) {
-    const { id, roomID } = beatStormMessage
-    if (this._beatStormID.has(id)) return
-    this._beatStormID.add(id)
-    // 更新时间
-    this._lastUpdate = Date.now()
-    this.emit('beatStorm', beatStormMessage)
-    tools.Log(`房间 ${roomID} 开启了第 ${id} 轮${beatStormMessage.title}`)
-    this._RoomListener.UpdateDB(roomID, 'beatStorm')
   }
 }
 export default Listener

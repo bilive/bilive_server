@@ -7,7 +7,7 @@ import { Options as requestOptions } from 'request'
 
 /**
  * 监听房间消息
- * 
+ *
  * @class RoomListener
  * @extends {EventEmitter}
  */
@@ -17,14 +17,14 @@ class RoomListener extends EventEmitter {
   }
   /**
    * 监控房间
-   * 
+   *
    * @type {Map<number, DMclient>}
    * @memberof RoomListener
    */
   public roomList: Map<number, DMclient> = new Map()
   /**
    * 开始监听
-   * 
+   *
    * @memberof RoomListener
    */
   public async Start() {
@@ -37,9 +37,9 @@ class RoomListener extends EventEmitter {
   }
   /**
    * 添加数据库内房间
-   * 
+   *
    * @private
-   * @param {number} [date=30 * 24 * 60 * 60 * 1000] 
+   * @param {number} [date=30 * 24 * 60 * 60 * 1000]
    * @memberof RoomListener
    */
   private async _AddDBRoom(date = 30 * 24 * 60 * 60 * 1000) {
@@ -63,9 +63,9 @@ class RoomListener extends EventEmitter {
   }
   /**
    * 添加直播房间
-   * 
-   * @param {number} roomID 
-   * @param {number} [userID=0] 
+   *
+   * @param {number} roomID
+   * @param {number} [userID=0]
    * @memberof RoomListener
    */
   public async AddRoom(roomID: number, userID: number = 0) {
@@ -145,7 +145,7 @@ class RoomListener extends EventEmitter {
   }
   /**
    * 监听抽奖
-   * 
+   *
    * @private
    * @param {RAFFLE_START} dataJson
    * @memberof RoomListener
@@ -163,11 +163,11 @@ class RoomListener extends EventEmitter {
       max_time: +dataJson.data.max_time,
       time_wait: +dataJson.data.time_wait
     }
-    this.emit('raffle', raffleMessage)
+    this.emit(cmd, raffleMessage)
   }
   /**
    * 监听快速抽奖
-   * 
+   *
    * @private
    * @param {LOTTERY_START} dataJson
    * @memberof RoomListener
@@ -186,7 +186,7 @@ class RoomListener extends EventEmitter {
   }
   /**
    * 监听特殊礼物消息
-   * 
+   *
    * @private
    * @param {SPECIAL_GIFT} dataJson
    * @memberof RoomListener
@@ -196,7 +196,7 @@ class RoomListener extends EventEmitter {
   }
   /**
    * 监听节奏风暴消息
-   * 
+   *
    * @private
    * @param {SPECIAL_GIFT} dataJson
    * @memberof RoomListener
@@ -219,9 +219,9 @@ class RoomListener extends EventEmitter {
   }
   /**
    * 写入数据库
-   * 
-   * @param {number} roomID 
-   * @param {string} cmd 
+   *
+   * @param {number} roomID
+   * @param {string} cmd
    * @memberof RoomListener
    */
   public async UpdateDB(roomID: number, cmd: string) {
@@ -239,10 +239,10 @@ class RoomListener extends EventEmitter {
   }
   /**
    * 获取masterID
-   * 
+   *
    * @private
-   * @param {number} roomID 
-   * @returns {Promise<number>} 
+   * @param {number} roomID
+   * @returns {Promise<number>}
    * @memberof RoomListener
    */
   private async _getMasterID(roomID: number): Promise<number> {
