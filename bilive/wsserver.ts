@@ -82,7 +82,6 @@ class WSServer {
           ? `${req.connection.remoteAddress}:${req.connection.remotePort}`
           : `${req.headers['x-real-ip']}:${req.headers['x-real-port']}`
         const useragent = req.headers['user-agent']
-        tools.Log(`用户: ${client.protocol} 地址: ${remoteAddress} 已连接. user-agent: ${useragent}`)
         const protocol = client.protocol
         const adminProtocol = Options._.server.protocol
         let user: string
