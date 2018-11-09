@@ -85,8 +85,16 @@ class WSServer {
         tools.Log(`用户: ${client.protocol} 地址: ${remoteAddress} 已连接. user-agent: ${useragent}`)
         const protocol = client.protocol
         const adminProtocol = Options._.server.protocol
-        if (protocol === adminProtocol) this._AdminConnectionHandler(client, remoteAddress)
-        else this._WsConnectionHandler(client, remoteAddress)
+        let user: string
+        if (protocol === adminProtocol) {
+          user = '管理员'
+          this._AdminConnectionHandler(client, remoteAddress)
+        }
+        else {
+          user = `用户: ${client.protocol}`
+          this._WsConnectionHandler(client, remoteAddress)
+        }
+        tools.Log(`${user} 地址: ${remoteAddress} 已连接. user-agent: ${useragent}`)
       })
     setInterval(() => this._WebSocketPing(), 60 * 1000)
   }
@@ -110,7 +118,7 @@ class WSServer {
       .on('close', (code, reason) => {
         delete tools.logs.onLog
         this._destroyClient(client)
-        tools.Log(`管理员 ${remoteAddress} 已断开`, code, reason)
+        tools.Log(`管理员 地址: ${remoteAddress} 已断开`, code, reason)
       })
       .on('message', async (msg: string) => {
         const message = await tools.JSONparse<adminMessage>(msg)
@@ -151,7 +159,7 @@ class WSServer {
         const clients = <Set<ws>>this._clients.get(protocol)
         clients.delete(client)
         if (clients.size === 0) this._clients.delete(protocol)
-        tools.Log(`${remoteAddress} 已断开`, code, reason)
+        tools.Log(`用户: ${protocol} 地址: ${remoteAddress} 已断开`, code, reason)
       })
     // 连接成功消息
     const welcome: message = {
