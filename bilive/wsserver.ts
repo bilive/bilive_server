@@ -151,7 +151,7 @@ class WSServer {
     let timeout: NodeJS.Timer
     const setTimeoutError = () => {
       timeout = setTimeout(() => {
-        client.emit('error', Error('timeout'))
+        client.emit('close', 4000, 'timeout')
       }, 2 * 60 * 1000)
     }
     client
