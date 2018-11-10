@@ -1,6 +1,7 @@
+import tools from './lib/tools'
+import Client from './client_re'
 import WSServer from './wsserver'
-import Listener from './listener'
-
+import Options from './options'
 /**
  * 主程序
  *
@@ -10,7 +11,6 @@ import Listener from './listener'
 class BiLive {
   constructor() {
   }
-  private _Listener!: Listener
   private _WSServer!: WSServer
   /**
    * 开始主程序
@@ -29,13 +29,27 @@ class BiLive {
    * @memberof BiLive
    */
   public Listener() {
-    this._Listener = new Listener()
-    this._Listener
-      .on('smallTV', raffleMessage => this._WSServer.SmallTV(raffleMessage))
-      .on('raffle', raffleMessage => this._WSServer.Raffle(raffleMessage))
-      .on('lottery', lotteryMessage => this._WSServer.Lottery(lotteryMessage))
-      .on('beatStorm', beatStormMessage => this._WSServer.BeatStorm(beatStormMessage))
-      .Start()
+    const { 0: server, 1: protocol } = Options._.config.serverURL.split('#')
+    if (protocol !== undefined && protocol !== '') this._RoomListener(server, protocol)
+  }
+  /**
+   * 房间监听
+   *
+   * @private
+   * @param {string} server
+   * @param {string} protocol
+   * @memberof BiLive
+   */
+  private _RoomListener(server: string, protocol: string) {
+    const client = new Client(server, protocol)
+    client
+      .on('smallTV', (raffleMessage: raffleMessage) => this._WSServer.SmallTV(raffleMessage))
+      .on('raffle', (raffleMessage: raffleMessage) => this._WSServer.Raffle(raffleMessage))
+      .on('lottery', (lotteryMessage: lotteryMessage) => this._WSServer.Lottery(lotteryMessage))
+      .on('beatStorm', (beatStormMessage: beatStormMessage) => this._WSServer.BeatStorm(beatStormMessage))
+      .on('sysmsg', (systemMessage: systemMessage) => tools.Log('服务器消息:', systemMessage.msg))
+      .Connect()
+    Options.on('clientUpdate', () => client.Update())
   }
 }
 

@@ -289,6 +289,7 @@ class WSServer {
       // 保存设置
       case 'setConfig': {
         const config = Options._.config
+        const serverURL = config.serverURL
         const sysmsg = config.sysmsg
         const setConfig = <config>message.data || {}
         let msg = ''
@@ -304,6 +305,7 @@ class WSServer {
           for (const i in config) config[i] = setConfig[i]
           Options.save()
           this._sendtoadmin({ cmd, ts, data: config })
+          if (serverURL !== config.serverURL) Options.emit('clientUpdate')
           if (sysmsg !== config.sysmsg) this.SysMsg(config.sysmsg)
         }
         else this._sendtoadmin({ cmd, ts, msg, data: config })

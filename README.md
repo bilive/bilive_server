@@ -6,11 +6,10 @@
     2. 安装[Node.js](https://nodejs.org/)
     3. 命令行 `git clone https://github.com/lzghzr/bilive_server.git`
     4. 命令行 `cd bilive_server`
-    5. 命令行 `mkdir options`
-    6. 命令行 `cp nedb/roomList.db options/roomList.db`
-    7. 命令行 `npm install`
-    8. 命令行 `npm run build`
-    9. 命令行 `npm start`
+    5. 命令行 `git checkout cdn`
+    6. 命令行 `npm install`
+    7. 命令行 `npm run build`
+    8. 命令行 `npm start`
   * 版本更新
     1. 定位到目录
     2. 命令行 `git pull`

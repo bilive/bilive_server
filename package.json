@@ -1,7 +1,7 @@
 {
   "name": "bilive_server",
   "version": "1.0.0",
-  "description": "bilibili直播监控程序",
+  "description": "bilibili直播监控转发程序",
   "main": "index.js",
   "scripts": {
     "build": "npm run build:tsc && npm-run-posix-or-windows build:copy",
@@ -14,19 +14,13 @@
   "author": "lzghzr",
   "license": "MIT",
   "devDependencies": {
-    "@types/nedb": "^1.8.6",
     "@types/node": "^10.12.2",
-    "@types/nodemailer": "^4.6.5",
-    "@types/request": "^2.48.0",
     "@types/ws": "^6.0.1",
     "npm-run-posix-or-windows": "^2.0.2",
     "rimraf": "^2.6.2",
     "typescript": "^3.1.6"
   },
   "dependencies": {
-    "nedb": "^1.8.0",
-    "nodemailer": "^4.6.8",
-    "request": "^2.88.0",
     "ws": "^6.1.0"
   }
 }
