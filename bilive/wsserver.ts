@@ -13,6 +13,8 @@ class WSServer {
   private _wsServer!: ws.Server
   private _clients: Map<string, Set<ws>> = new Map()
   private _adminClient!: ws
+  //@ts-ignore
+  private _loop: NodeJS.Timer
   /**
    * 启动HTTP以及WebSocket服务
    *
@@ -95,7 +97,7 @@ class WSServer {
         }
         tools.Log(`${user} 地址: ${remoteAddress} 已连接. user-agent: ${useragent}`)
       })
-    setInterval(() => this._WebSocketPing(), 60 * 1000)
+    this._loop = setInterval(() => this._WebSocketPing(), 60 * 1000)
   }
   /**
    * 管理员连接
@@ -197,9 +199,7 @@ class WSServer {
    * @memberof WSServer
    */
   private _WebSocketPing() {
-    this._wsServer.clients.forEach(client => {
-      if (client.readyState === ws.OPEN) client.ping()
-    })
+    this._wsServer.clients.forEach(client => client.ping())
   }
   /**
    * 消息广播

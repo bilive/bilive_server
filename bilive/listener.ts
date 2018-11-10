@@ -79,6 +79,8 @@ class Listener extends EventEmitter {
    * @memberof Listener
    */
   private _RoomListener!: RoomListener
+  //@ts-ignore
+  private _loop: NodeJS.Timer
   /**
    * 开始监听
    *
@@ -87,7 +89,7 @@ class Listener extends EventEmitter {
   public Start() {
     this.updateAreaRoom()
     // 3s清空一次消息缓存
-    setInterval(() => this._MSGCache.clear(), 3 * 1000)
+    this._loop = setInterval(() => this._MSGCache.clear(), 3 * 1000)
     // 房间
     this._RoomListener = new RoomListener()
     this._RoomListener
