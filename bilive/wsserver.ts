@@ -148,6 +148,12 @@ class WSServer {
       const clients = new Set([client])
       this._clients.set(protocol, clients)
     }
+    let timeout: NodeJS.Timer
+    const setTimeoutError = () => {
+      timeout = setTimeout(() => {
+        client.emit('error', Error('timeout'))
+      }, 2 * 60 * 1000)
+    }
     client
       .on('error', err => {
         this._destroyClient(client)
@@ -160,6 +166,11 @@ class WSServer {
         if (clients.size === 0) this._clients.delete(protocol)
         tools.Log(`用户: ${protocol} 地址: ${remoteAddress} 已断开`, code, reason)
       })
+      .on('pong', () => {
+        clearTimeout(timeout)
+        setTimeoutError()
+      })
+    setTimeoutError()
     // 连接成功消息
     const welcome: message = {
       cmd: 'sysmsg',

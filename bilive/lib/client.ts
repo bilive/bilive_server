@@ -44,6 +44,14 @@ class Client extends EventEmitter {
    */
   protected _wsClient!: ws
   /**
+   * 是否已经连接到服务器
+   *
+   * @protected
+   * @type {boolean}
+   * @memberof Client
+   */
+  protected _connected: boolean = false
+  /**
    * 全局计时器, 负责除心跳超时的其他任务, 便于停止
    *
    * @protected
@@ -65,7 +73,8 @@ class Client extends EventEmitter {
    * @memberof Client
    */
   public Connect() {
-    if (this._wsClient !== undefined && this._wsClient.readyState === ws.OPEN) return
+    if (this._connected) return
+    this._connected = true
     this._wsClient = new ws(this._server, [this._protocol])
     this._wsClient
       .on('error', error => this._ClientErrorHandler(error))
@@ -80,7 +89,8 @@ class Client extends EventEmitter {
    * @memberof Client
    */
   public Close() {
-    if (this._wsClient === undefined || this._wsClient.readyState !== ws.OPEN) return
+    if (!this._connected) return
+    this._connected = false
     clearTimeout(this._timeout)
     this._wsClient.close()
     this._wsClient.terminate()
