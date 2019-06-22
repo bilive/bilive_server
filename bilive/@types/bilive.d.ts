@@ -36,7 +36,6 @@ interface userData {
   userHash: string
   welcome: string
   usermsg: string
-  smallTV: boolean
   raffle: boolean
   lottery: boolean
   pklottery: boolean
@@ -47,16 +46,12 @@ interface optionsInfo {
   liveOrigin: configInfoData
   apiVCOrigin: configInfoData
   apiLiveOrigin: configInfoData
-  smallTVPathname: configInfoData
-  rafflePathname: configInfoData
-  lotteryPathname: configInfoData
   excludeCMD: configInfoData
   sysmsg: configInfoData
   status: configInfoData
   userHash: configInfoData
   welcome: configInfoData
   usermsg: configInfoData
-  smallTV: configInfoData
   raffle: configInfoData
   lottery: configInfoData
   pklottery: configInfoData

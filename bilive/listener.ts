@@ -93,7 +93,6 @@ class Listener extends EventEmitter {
     // 房间
     this._RoomListener = new RoomListener()
     this._RoomListener
-      .on('smallTV', (raffleMessage: raffleMessage) => this._RaffleHandler(raffleMessage))
       .on('raffle', (raffleMessage: raffleMessage) => this._RaffleHandler(raffleMessage))
       .on('lottery', (lotteryMessage: lotteryMessage) => this._RaffleHandler(lotteryMessage))
       .on('pklottery', (lotteryMessage: lotteryMessage) => this._RaffleHandler(lotteryMessage))
