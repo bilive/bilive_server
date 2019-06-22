@@ -12,61 +12,8 @@
     "smallTVPathname": "/gift/v4/smalltv",
     "rafflePathname": "/activity/v1/Raffle",
     "lotteryPathname": "/lottery/v1/lottery",
-    "excludeCMD": [
-      "DANMU_MSG",
-      "SEND_GIFT",
-      "SYS_MSG",
-      "SYS_GIFT",
-      "COMBO_SEND",
-      "COMBO_END",
-      "WELCOME",
-      "WELCOME_GUARD",
-      "WELCOME_ACTIVITY",
-      "ENTRY_EFFECT",
-      "GUARD_BUY",
-      "GUARD_MSG",
-      "EVENT_CMD",
-      "RAFFLE_START",
-      "RAFFLE_END",
-      "NOTICE_MSG",
-      "TV_START",
-      "TV_END",
-      "EVENT_CMD",
-      "LOTTERY_START",
-      "GUARD_LOTTERY_START",
-      "SPECIAL_GIFT",
-      "PREPARING",
-      "LIVE",
-      "ROOM_SILENT_ON",
-      "ROOM_SILENT_OFF",
-      "ROOM_SHIELD",
-      "ROOM_BLOCK_MSG",
-      "ROOM_ADMINS",
-      "CHANGE_ROOM_INFO",
-      "WISH_BOTTLE",
-      "ACTIVITY_EVENT",
-      "WARNING",
-      "CUT_OFF",
-      "ROOM_LOCK",
-      "ROOM_RANK",
-      "PK_INVITE_INIT",
-      "PK_INVITE_REFUSE",
-      "PK_INVITE_CANCEL",
-      "PK_INVITE_FAIL",
-      "PK_INVITE_SWITCH_OPEN",
-      "PK_INVITE_SWITCH_CLOSE",
-      "PK_MATCH",
-      "PK_PRE",
-      "PK_START",
-      "PK_PROCESS",
-      "PK_END",
-      "PK_SETTLE",
-      "PK_CLICK_AGAIN",
-      "PK_AGAIN",
-      "PK_MIC_END",
-      "USER_TITLE_GET",
-      "DRAW_UPDATE"
-    ],
+    "pklotteryPathname": "/xlive/lottery-interface/v1/pk",
+    "excludeCMD": [],
     "sysmsg": ""
   },
   "user": {},
@@ -78,6 +25,7 @@
     "smallTV": false,
     "raffle": false,
     "lottery": false,
+    "pklottery": false,
     "beatStorm": false
   },
   "info": {
@@ -109,6 +57,11 @@
     "lotteryPathname": {
       "description": "lottery路径",
       "tip": "lottery抽奖路径",
+      "type": "string"
+    },
+    "pklotteryPathname": {
+      "description": "大乱斗路径",
+      "tip": "大乱斗抽奖路径",
       "type": "string"
     },
     "excludeCMD": {
@@ -154,6 +107,11 @@
     "lottery": {
       "description": "lottery类抽奖",
       "tip": "是否向该用户组发送lottery类抽奖消息, 例如舰队抽奖",
+      "type": "boolean"
+    },
+    "pklottery": {
+      "description": "大乱斗抽奖",
+      "tip": "是否向该用户组发送大乱斗抽奖消息",
       "type": "boolean"
     },
     "beatStorm": {

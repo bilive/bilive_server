@@ -124,6 +124,31 @@ interface DMdanmakuError {
   error: TypeError
   data: Buffer
 }
+// 弹幕服务器
+interface danmuInfo {
+  code: number
+  message: string
+  ttl: number
+  data: danmuInfoData
+}
+interface danmuInfoData {
+  refresh_row_factor: number
+  refresh_rate: number
+  max_delay: number
+  token: string
+  host_list: danmuInfoDataHostList[]
+  ip_list: danmuInfoDataIPList[]
+}
+interface danmuInfoDataHostList {
+  host: string
+  port: number
+  wss_port: number
+  ws_port: number
+}
+interface danmuInfoDataIPList {
+  host: string
+  port: number
+}
 /*******************
  *** app_client ****
  *******************/
@@ -253,6 +278,15 @@ interface XHRresponse<T> {
   body: T
 }
 /**
+ * 客户端消息
+ *
+ * @interface systemMSG
+ */
+interface systemMSG {
+  message: string
+  options: options
+}
+/**
  * Server酱
  *
  * @interface serverChan
@@ -302,7 +336,7 @@ interface raffleMessage {
  * @interface lotteryMessage
  */
 interface lotteryMessage {
-  cmd: 'lottery'
+  cmd: 'lottery' | 'pklottery'
   roomID: number
   id: number
   type: string

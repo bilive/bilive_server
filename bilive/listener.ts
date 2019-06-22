@@ -48,6 +48,14 @@ class Listener extends EventEmitter {
    */
   private _lotteryID: Set<number> = new Set()
   /**
+   * 大乱斗抽奖ID
+   *
+   * @private
+   * @type {Set<number>}
+   * @memberof Listener
+   */
+  private _pklotteryID: Set<number> = new Set()
+  /**
    * 节奏风暴ID
    *
    * @private
@@ -96,6 +104,7 @@ class Listener extends EventEmitter {
       .on('smallTV', (raffleMessage: raffleMessage) => this._RaffleHandler(raffleMessage))
       .on('raffle', (raffleMessage: raffleMessage) => this._RaffleHandler(raffleMessage))
       .on('lottery', (lotteryMessage: lotteryMessage) => this._RaffleHandler(lotteryMessage))
+      .on('pklottery', (lotteryMessage: lotteryMessage) => this._RaffleHandler(lotteryMessage))
       .on('beatStorm', (beatStormMessage: beatStormMessage) => this._RaffleHandler(beatStormMessage))
       .Start()
   }
@@ -260,6 +269,10 @@ class Listener extends EventEmitter {
       case 'lottery':
         if (this._lotteryID.has(id)) return
         this._lotteryID.add(id)
+        break
+      case 'pklottery':
+        if (this._pklotteryID.has(id)) return
+        this._pklotteryID.add(id)
         break
       case 'beatStorm':
         if (this._beatStormID.has(id)) return

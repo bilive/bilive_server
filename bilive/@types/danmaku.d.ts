@@ -1289,6 +1289,26 @@ interface PK_MIC_END_Data {
   exception_id?: number
 }
 /**
+ * 大乱斗抽奖
+ * {"cmd":"PK_LOTTERY_START","data":{"asset_animation_pic":"https://i0.hdslb.com/bfs/live/e1ab9f88b4af63fbf15197acea2dbb60bfc4434b.gif","asset_icon":"https://i0.hdslb.com/bfs/vc/44c367b09a8271afa22853785849e65797e085a1.png","id":332787,"max_time":120,"pk_id":332787,"room_id":4870575,"time":120,"title":"恭喜主播大乱斗胜利"},"_roomid":4870575}
+ *
+ * @interface PK_LOTTERY_START
+ * @extends {danmuJson}
+ */
+interface PK_LOTTERY_START extends danmuJson {
+  data: PK_LOTTERY_START_Data
+}
+interface PK_LOTTERY_START_Data {
+  asset_animation_pic: string
+  asset_icon: string
+  id: number
+  max_time: number
+  pk_id: number
+  room_id: number
+  time: number
+  title: string
+}
+/**
  * 用户头衔(存疑)
  * {"cmd":"USER_TITLE_GET","data":{"title_id":"may-pillow","source":"2016 五月病","name":"被窝","description":"赠送 25 个被窝","colorful":0,"create_time":"2018-10-31 20:17:15","expire_time":"永久","url":"/may","mobile_pic_url":"http://s1.hdslb.com/bfs/static/blive/live-assets/mobile/titles/title/3/may-pillow.png?20180726173300","web_pic_url":"http://s1.hdslb.com/bfs/static/blive/live-assets/mobile/titles/title/3/may-pillow.png?20180726173300","num":1,"score":0,"level":1},"uid":301606770,"_roomid":9950825}
  * {"cmd":"USER_TITLE_GET","data":{"title_id":"title-174-1","source":"2018 BLS年终盛典 ","name":"幻影","description":"通过普通扭蛋机有几率获得 ","colorful":0,"create_time":"2018-10-31 20:19:26","expire_time":"永久","url":"http://live.bilibili.com/blackboard/bls-2018-web.html","mobile_pic_url":"http://s1.hdslb.com/bfs/vc/a61f2913f8a86b03ef432a286fd5e9e3e22e17bd.png?20180726173300","web_pic_url":"http://s1.hdslb.com/bfs/vc/a61f2913f8a86b03ef432a286fd5e9e3e22e17bd.png?20180726173300","num":1,"score":0,"level":1},"uid":66822870,"_roomid":2776645}
