@@ -43,9 +43,9 @@ class BiLive {
   private _RoomListener(server: string, protocol: string) {
     const client = new Client(server, protocol)
     client
-      .on('smallTV', (raffleMessage: raffleMessage) => this._WSServer.SmallTV(raffleMessage))
       .on('raffle', (raffleMessage: raffleMessage) => this._WSServer.Raffle(raffleMessage))
       .on('lottery', (lotteryMessage: lotteryMessage) => this._WSServer.Lottery(lotteryMessage))
+      .on('pklottery', (lotteryMessage: lotteryMessage) => this._WSServer.PKLottery(lotteryMessage))
       .on('beatStorm', (beatStormMessage: beatStormMessage) => this._WSServer.BeatStorm(beatStormMessage))
       .on('sysmsg', (systemMessage: systemMessage) => tools.Log('服务器消息:', systemMessage.msg))
       .Connect()

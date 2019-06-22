@@ -214,26 +214,6 @@ class WSServer {
     this._Broadcast(systemMessage, 'sysmsg', protocol)
   }
   /**
-   * 节奏风暴
-   *
-   * @param {beatStormInfo} beatStormInfo
-   * @param {string} [protocol]
-   * @memberof WSServer
-   */
-  public BeatStorm(beatStormInfo: message, protocol?: string) {
-    this._Broadcast(beatStormInfo, 'beatStorm', protocol)
-  }
-  /**
-   * 小电视
-   *
-   * @param {raffleMessage} raffleMessage
-   * @param {string} [protocol]
-   * @memberof WSServer
-   */
-  public SmallTV(raffleMessage: raffleMessage, protocol?: string) {
-    this._Broadcast(raffleMessage, 'smallTV', protocol)
-  }
-  /**
    * 抽奖raffle
    *
    * @param {raffleMessage} raffleMessage
@@ -252,6 +232,26 @@ class WSServer {
    */
   public Lottery(lotteryMessage: message, protocol?: string) {
     this._Broadcast(lotteryMessage, 'lottery', protocol)
+  }
+  /**
+   * 抽奖PKlottery
+   *
+   * @param {lotteryMessage} lotteryMessage
+   * @param {string} [protocol]
+   * @memberof WSServer
+   */
+  public PKLottery(lotteryMessage: lotteryMessage, protocol?: string) {
+    this._Broadcast(lotteryMessage, 'pklottery', protocol)
+  }
+  /**
+   * 节奏风暴
+   *
+   * @param {beatStormInfo} beatStormInfo
+   * @param {string} [protocol]
+   * @memberof WSServer
+   */
+  public BeatStorm(beatStormInfo: message, protocol?: string) {
+    this._Broadcast(beatStormInfo, 'beatStorm', protocol)
   }
   /**
    * 广播消息

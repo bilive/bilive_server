@@ -33,9 +33,9 @@ interface userData {
   userHash: string
   welcome: string
   usermsg: string
-  smallTV: boolean
   raffle: boolean
   lottery: boolean
+  pklottery: boolean
   beatStorm: boolean
 }
 interface optionsInfo {
@@ -46,9 +46,9 @@ interface optionsInfo {
   userHash: configInfoData
   welcome: configInfoData
   usermsg: configInfoData
-  smallTV: configInfoData
   raffle: configInfoData
   lottery: configInfoData
+  pklottery: configInfoData
   beatStorm: configInfoData
 }
 interface configInfoData {
@@ -66,7 +66,7 @@ interface configInfoData {
  * @interface raffleMessage
  */
 interface raffleMessage {
-  cmd: 'smallTV' | 'raffle'
+  cmd: 'raffle'
   roomID: number
   id: number
   type: string
@@ -81,7 +81,7 @@ interface raffleMessage {
  * @interface lotteryMessage
  */
 interface lotteryMessage {
-  cmd: 'lottery'
+  cmd: 'lottery' | 'pklottery'
   roomID: number
   id: number
   type: string
