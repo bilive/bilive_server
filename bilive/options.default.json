@@ -9,10 +9,6 @@
     "liveOrigin": "https://live.bilibili.com",
     "apiLiveOrigin": "https://api.live.bilibili.com",
     "apiVCOrigin": "https://api.vc.bilibili.com",
-    "smallTVPathname": "/gift/v4/smalltv",
-    "rafflePathname": "/activity/v1/Raffle",
-    "lotteryPathname": "/lottery/v1/lottery",
-    "pklotteryPathname": "/xlive/lottery-interface/v1/pk",
     "excludeCMD": [],
     "sysmsg": ""
   },

@@ -97,9 +97,8 @@ class RoomListener extends EventEmitter {
    */
   private _RaffleStartHandler(dataJson: RAFFLE_START) {
     if (dataJson.data === undefined || dataJson.data.raffleId === undefined) return
-    const cmd = dataJson.data.type === 'small_tv' ? 'smallTV' : 'raffle'
     const raffleMessage: raffleMessage = {
-      cmd,
+      cmd: 'raffle',
       roomID: dataJson._roomid,
       id: +dataJson.data.raffleId,
       type: dataJson.data.type,
@@ -108,7 +107,7 @@ class RoomListener extends EventEmitter {
       max_time: +dataJson.data.max_time,
       time_wait: +dataJson.data.time_wait
     }
-    this.emit(cmd, raffleMessage)
+    this.emit('raffle', raffleMessage)
   }
   /**
    * 监听快速抽奖
