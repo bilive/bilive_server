@@ -112,6 +112,18 @@ interface systemMessage {
 }
 type message = raffleMessage | lotteryMessage | beatStormMessage | systemMessage
 /*******************
+ ****** tools ******
+ *******************/
+/**
+ * 客户端消息
+ *
+ * @interface systemMSG
+ */
+interface systemMSG {
+  message: string
+  options: options
+}
+/*******************
  ***** wsserver ****
  *******************/
 /**

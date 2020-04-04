@@ -2,6 +2,7 @@ import fs from 'fs'
 import ws from 'ws'
 import http from 'http'
 import { randomBytes } from 'crypto'
+import { EventEmitter } from 'events'
 import tools from './lib/tools'
 import Options from './options'
 /**
@@ -9,10 +10,15 @@ import Options from './options'
  *
  * @class WSServer
  */
-class WSServer {
+class WSServer extends EventEmitter {
+  constructor() {
+    super()
+  }
   private _wsServer!: ws.Server
   private _clients: Map<string, Set<ws>> = new Map()
   private _adminClient!: ws
+  //@ts-ignore
+  private _loop: NodeJS.Timer
   /**
    * 启动HTTP以及WebSocket服务
    *
@@ -95,7 +101,7 @@ class WSServer {
         }
         tools.Log(`${user} 地址: ${remoteAddress} 已连接. user-agent: ${useragent}`)
       })
-    setInterval(() => this._WebSocketPing(), 60 * 1000)
+    this._loop = setInterval(() => this._WebSocketPing(), 60 * 1000)
   }
   /**
    * 管理员连接
@@ -108,14 +114,16 @@ class WSServer {
   private _AdminConnectionHandler(client: ws, remoteAddress: string) {
     // 限制同时只能连接一个客户端
     if (this._adminClient !== undefined) this._adminClient.close(1001, JSON.stringify({ cmd: 'close', msg: 'too many connections' }))
+    // 使用function可能出现一些问题, 此处无妨
+    const onLog = (data: string) => this._sendtoadmin({ cmd: 'log', ts: 'log', msg: data })
     client
       .on('error', err => {
-        delete tools.logs.onLog
+        tools.removeListener('log', onLog)
         this._destroyClient(client)
         tools.ErrorLog(client.protocol, remoteAddress, err)
       })
       .on('close', (code, reason) => {
-        delete tools.logs.onLog
+        tools.removeListener('log', onLog)
         this._destroyClient(client)
         tools.Log(`管理员 地址: ${remoteAddress} 已断开`, code, reason)
       })
@@ -126,7 +134,7 @@ class WSServer {
       })
     this._adminClient = client
     // 日志
-    tools.logs.onLog = data => this._sendtoadmin({ cmd: 'log', ts: 'log', msg: data })
+    tools.on('log', onLog)
   }
   /**
    * 处理连接事件
@@ -234,13 +242,13 @@ class WSServer {
     this._Broadcast(lotteryMessage, 'lottery', protocol)
   }
   /**
-   * 抽奖PKlottery
+   * 大乱斗抽奖
    *
    * @param {lotteryMessage} lotteryMessage
    * @param {string} [protocol]
    * @memberof WSServer
    */
-  public PKLottery(lotteryMessage: lotteryMessage, protocol?: string) {
+  public PKLottery(lotteryMessage: message, protocol?: string) {
     this._Broadcast(lotteryMessage, 'pklottery', protocol)
   }
   /**
@@ -285,7 +293,7 @@ class WSServer {
     switch (cmd) {
       // 获取log
       case 'getLog': {
-        const data = tools.logs.data
+        const data = tools.logs
         this._sendtoadmin({ cmd, ts, data })
       }
         break

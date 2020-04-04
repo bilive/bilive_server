@@ -1,5 +1,5 @@
 {
-  "name": "bilive_server",
+  "name": "bilive_server_cdn",
   "version": "1.0.0",
   "description": "bilibili直播监控转发程序",
   "main": "index.js",
@@ -8,19 +8,20 @@
     "build:tsc": "tsc -p tsconfig.json || exit 0",
     "build:copy": "cp bilive/options.default.json build/bilive/",
     "build:copy:windows": "copy bilive\\options.default.json build\\bilive\\ /Y",
-    "clean": "rimraf build",
+    "clean": "npm-run-posix-or-windows rmbuild",
+    "rmbuild": "rm -rf build",
+    "rmbuild:windows": "rmdir /S /Q build || exit 0",
     "start": "node build/app.js"
   },
   "author": "lzghzr",
   "license": "MIT",
   "devDependencies": {
-    "@types/node": "^10.12.2",
-    "@types/ws": "^6.0.1",
+    "@types/node": "^13.9.1",
+    "@types/ws": "^7.2.2",
     "npm-run-posix-or-windows": "^2.0.2",
-    "rimraf": "^2.6.2",
-    "typescript": "^3.1.6"
+    "typescript": "^3.8.3"
   },
   "dependencies": {
-    "ws": "^6.1.0"
+    "ws": "^7.2.3"
   }
 }

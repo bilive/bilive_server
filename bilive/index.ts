@@ -31,6 +31,26 @@ class BiLive {
   public Listener() {
     const { 0: server, 1: protocol } = Options._.config.serverURL.split('#')
     if (protocol !== undefined && protocol !== '') this._RoomListener(server, protocol)
+    // 房间监控
+    tools.on('roomListener', (message: message) => {
+      switch (message.cmd) {
+        case 'raffle':
+          this._WSServer.Raffle(message)
+          break
+        case 'lottery':
+          this._WSServer.Lottery(message)
+          break
+        case 'pklottery':
+          this._WSServer.PKLottery(message)
+          break
+        case 'beatStorm':
+          this._WSServer.BeatStorm(message)
+          break
+        case 'sysmsg':
+          tools.Log('服务器消息:', message.msg)
+          break
+      }
+    })
   }
   /**
    * 房间监听
@@ -42,13 +62,7 @@ class BiLive {
    */
   private _RoomListener(server: string, protocol: string) {
     const client = new Client(server, protocol)
-    client
-      .on('raffle', (raffleMessage: raffleMessage) => this._WSServer.Raffle(raffleMessage))
-      .on('lottery', (lotteryMessage: lotteryMessage) => this._WSServer.Lottery(lotteryMessage))
-      .on('pklottery', (lotteryMessage: lotteryMessage) => this._WSServer.PKLottery(lotteryMessage))
-      .on('beatStorm', (beatStormMessage: beatStormMessage) => this._WSServer.BeatStorm(beatStormMessage))
-      .on('sysmsg', (systemMessage: systemMessage) => tools.Log('服务器消息:', systemMessage.msg))
-      .Connect()
+    client.Connect()
     Options.on('clientUpdate', () => client.Update())
   }
 }
