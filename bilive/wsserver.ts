@@ -238,7 +238,7 @@ class WSServer extends EventEmitter {
    * @param {string} [protocol]
    * @memberof WSServer
    */
-  public Lottery(lotteryMessage: message, protocol?: string) {
+  public Lottery(lotteryMessage: lotteryMessage, protocol?: string) {
     this._Broadcast(lotteryMessage, 'lottery', protocol)
   }
   /**
@@ -248,18 +248,38 @@ class WSServer extends EventEmitter {
    * @param {string} [protocol]
    * @memberof WSServer
    */
-  public PKLottery(lotteryMessage: message, protocol?: string) {
+  public PKLottery(lotteryMessage: lotteryMessage, protocol?: string) {
     this._Broadcast(lotteryMessage, 'pklottery', protocol)
   }
   /**
    * 节奏风暴
    *
-   * @param {beatStormInfo} beatStormInfo
+   * @param {beatStormMessage} beatStormMessage
    * @param {string} [protocol]
    * @memberof WSServer
    */
-  public BeatStorm(beatStormInfo: message, protocol?: string) {
-    this._Broadcast(beatStormInfo, 'beatStorm', protocol)
+  public BeatStorm(beatStormMessage: beatStormMessage, protocol?: string) {
+    this._Broadcast(beatStormMessage, 'beatStorm', protocol)
+  }
+  /**
+   * 天选时刻
+   *
+   * @param {anchorLotMessage} anchorLotMessage
+   * @param {string} [protocol]
+   * @memberof WSServer
+   */
+  public AchorLot(anchorLotMessage: anchorLotMessage, protocol?: string) {
+    this._Broadcast(anchorLotMessage, 'anchorLot', protocol)
+  }
+  /**
+   * 宝箱抽奖
+   *
+   * @param {boxActivityMessage} boxActivityMessage
+   * @param {string} [protocol]
+   * @memberof WSServer
+   */
+  public BoxActivity(boxActivityMessage: boxActivityMessage, protocol?: string) {
+    this._Broadcast(boxActivityMessage, 'boxActivity', protocol)
   }
   /**
    * 广播消息

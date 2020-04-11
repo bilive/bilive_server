@@ -46,6 +46,12 @@ class BiLive {
         case 'beatStorm':
           this._WSServer.BeatStorm(message)
           break
+        case 'anchorLot':
+          this._WSServer.AchorLot(message)
+          break
+        case 'boxActivity':
+          this._WSServer.BoxActivity(message)
+          break
         case 'sysmsg':
           tools.Log('服务器消息:', message.msg)
           break

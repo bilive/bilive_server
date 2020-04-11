@@ -18,7 +18,9 @@
     "raffle": false,
     "lottery": false,
     "pklottery": false,
-    "beatStorm": false
+    "beatStorm": false,
+    "anchorLot": false,
+    "boxActivity": false
   },
   "info": {
     "serverURL": {
@@ -69,6 +71,16 @@
     "beatStorm": {
       "description": "节奏风暴",
       "tip": "是否向该用户组发送节奏风暴消息",
+      "type": "boolean"
+    },
+    "anchorLot": {
+      "description": "天选时刻",
+      "tip": "是否向该用户组发送天选时刻消息",
+      "type": "boolean"
+    },
+    "boxActivity": {
+      "description": "宝箱抽奖",
+      "tip": "是否向该用户组发送宝箱抽奖消息",
       "type": "boolean"
     }
   }
