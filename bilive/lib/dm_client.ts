@@ -26,11 +26,12 @@ class DMclient extends EventEmitter {
    * @param {Options} [{ roomID = 23058, userID = 0, protocol = 'socket' }={}]
    * @memberof DMclient
    */
-  constructor({ roomID = 23058, userID = 0, protocol = 'socket' }: DMclientOptions = {}) {
+  constructor({ roomID = 23058, userID = 0, protocol = 'socket', key = '' }: DMclientOptions = {}) {
     super()
     this.roomID = roomID
     this.userID = userID
     this._protocol = protocol
+    this.key = key
   }
   /**
    * 用户UID
@@ -52,7 +53,7 @@ class DMclient extends EventEmitter {
    * @type {string}
    * @memberof DMclient
    */
-  public key = ''
+  public key: string
   /**
    * 连接弹幕服务器使用的协议
    * 为了避免不必要的麻烦, 禁止外部修改
@@ -189,16 +190,19 @@ class DMclient extends EventEmitter {
   /**
    * 连接到指定服务器
    *
-   * @param {{ server: string, port: number }} [options]
+   * @param {{ server: string, port: number, key: string }} [options]
    * @memberof DMclient
    */
-  public async Connect(options?: { server: string, port: number }) {
+  public async Connect(options?: { server: string, port: number, key: string }) {
     if (this._connected) return
     this._connected = true
     if (options === undefined) {
       // 动态获取服务器地址, 防止B站临时更换
-      const getDanmuInfo = { uri: `https://api.live.bilibili.com/xlive/app-room/v1/index/getDanmuInfo?${AppClient.signQueryBase(`room_id=${this.roomID}`)}` }
-      const danmuInfo = await tools.XHR<danmuInfo>(getDanmuInfo)
+      const getDanmuInfo: XHRoptions = {
+        url: `https://api.live.bilibili.com/xlive/app-room/v1/index/getDanmuInfo?${AppClient.signQueryBase(`room_id=${this.roomID}`)}`,
+        responseType: 'json'
+      }
+      const danmuInfo = await tools.XHR<danmuInfo>(getDanmuInfo, 'Android')
       let socketServer = 'broadcastlv.chat.bilibili.com'
       let socketPort = 2243
       let wsServer = 'broadcastlv.chat.bilibili.com'
@@ -225,6 +229,7 @@ class DMclient extends EventEmitter {
     else {
       this._server = options.server
       this._port = options.port
+      this.key = options.key
     }
     this._ClientConnect()
   }
@@ -295,11 +300,10 @@ class DMclient extends EventEmitter {
   protected _ClientConnectHandler() {
     let data: string
     if (this._protocol === 'socket')
-      data = JSON.stringify({ uid: this.userID, roomid: this.roomID, key: this.key, platform: 'android', clientver: '5.43.0.5430400', hwid: AppClient.RandomID(20), protover: 2 })
+      data = JSON.stringify({ group: '', uid: this.userID, roomid: this.roomID, key: this.key, platform: 'android', clientver: '5.57.0.5570300', hwid: AppClient.deviceId, protover: 2 })
     else if (this._protocol === 'flash')
       data = JSON.stringify({ key: this.key, clientver: '2.4.6-9e02b4f1', roomid: this.roomID, uid: this.userID, protover: 2, platform: 'flash' })
-    else data = JSON.stringify({ uid: this.userID, roomid: this.roomID, protover: 2, platform: 'web', clientver: '1.7.4', type: 2, key: this.key })
-    this._Timer = setTimeout(() => this._ClientHeart(), 30 * 1000)
+    else data = JSON.stringify({ uid: this.userID, roomid: this.roomID, protover: 2, platform: 'web', clientver: '1.10.6', type: 2, key: this.key })
     this._ClientSendData(16 + data.length, 16, this.version, 7, this.driver, data)
   }
   /**
@@ -429,7 +433,9 @@ class DMclient extends EventEmitter {
       }
         break
       case 8:
-        this.emit('connect')
+        this._ClientHeart()
+        const dataJson = await tools.JSONparse<danmuJson>(data.toString('UTF-8', 16))
+        this.emit('connect', dataJson === undefined ? 'connect' : dataJson)
         break
       default: {
         const errorInfo: DMdanmakuError = { status: dmErrorStatus.danmaku, error: new TypeError('未知的弹幕内容'), data }

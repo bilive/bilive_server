@@ -1,6 +1,5 @@
 import WSServer from './wsserver'
 import Listener from './listener'
-
 /**
  * 主程序
  *
@@ -35,6 +34,8 @@ class BiLive {
       .on('lottery', lotteryMessage => this._WSServer.Lottery(lotteryMessage))
       .on('pklottery', lotteryMessage => this._WSServer.PKLottery(lotteryMessage))
       .on('beatStorm', beatStormMessage => this._WSServer.BeatStorm(beatStormMessage))
+      .on('anchorLot', anchorLotMessage => this._WSServer.AchorLot(anchorLotMessage))
+      .on('boxActivity', boxActivityMessage => this._WSServer.BoxActivity(boxActivityMessage))
       .Start()
   }
 }

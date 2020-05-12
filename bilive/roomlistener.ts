@@ -3,8 +3,6 @@ import tools from './lib/tools'
 import DMclient from './dm_client_re'
 import Options from './options'
 import { EventEmitter } from 'events'
-import { Options as requestOptions } from 'request'
-
 /**
  * 监听房间消息
  *
@@ -14,7 +12,13 @@ import { Options as requestOptions } from 'request'
 class RoomListener extends EventEmitter {
   constructor() {
     super()
+    // 防止api访问过快
+    this.Timer = setInterval(() => {
+      const roomID = this._roomList.shift()
+      if (roomID !== undefined) this._AddRoom(roomID)
+    }, 100)
   }
+  public Timer: NodeJS.Timer
   /**
    * 监控房间
    *
@@ -22,6 +26,7 @@ class RoomListener extends EventEmitter {
    * @memberof RoomListener
    */
   public roomList: Map<number, DMclient> = new Map()
+  protected _roomList: number[] = []
   /**
    * 开始监听
    *
@@ -65,13 +70,16 @@ class RoomListener extends EventEmitter {
    * 添加直播房间
    *
    * @param {number} roomID
-   * @param {number} [userID=0]
+   * @param {number} [_userID=0]
    * @memberof RoomListener
    */
-  public async AddRoom(roomID: number, userID: number = 0) {
+  public AddRoom(roomID: number, _userID: number = 0) {
+    if (this._roomList.includes(roomID) || this.roomList.has(roomID)) return
+    this._roomList.push(roomID)
+  }
+  protected _AddRoom(roomID: number, _userID: number = 0) {
     if (this.roomList.has(roomID)) return
-    if (userID === 0) userID = await this._getMasterID(roomID)
-    const commentClient = new DMclient({ roomID, userID, protocol: 'flash' })
+    const commentClient = new DMclient({ roomID })
     commentClient
       .on('TV_START', dataJson => this._RaffleStartHandler(dataJson))
       .on('RAFFLE_START', dataJson => this._RaffleStartHandler(dataJson))
@@ -79,13 +87,15 @@ class RoomListener extends EventEmitter {
       .on('PK_LOTTERY_START', dataJson => this._PKLotteryStartHandler(dataJson))
       .on('GUARD_LOTTERY_START', dataJson => this._LotteryStartHandler(dataJson))
       .on('SPECIAL_GIFT', dataJson => this._SpecialGiftHandler(dataJson))
+      .on('ANCHOR_LOT_START', dataJson => this._AnchorLotHandler(dataJson))
+      .on('BOX_ACTIVITY_START', dataJson => this._BoxActivityHandler(dataJson))
       .on('ALL_MSG', dataJson => {
         if (!Options._.config.excludeCMD.includes(dataJson.cmd)) {
           Options._.config.excludeCMD.push(dataJson.cmd)
           tools.Log(JSON.stringify(dataJson))
         }
       })
-      .Connect({ server: 'broadcastlv.chat.bilibili.com', port: 2243 })
+      .Connect()
     this.roomList.set(roomID, commentClient)
   }
   /**
@@ -105,7 +115,8 @@ class RoomListener extends EventEmitter {
       title: dataJson.data.title,
       time: +dataJson.data.time,
       max_time: +dataJson.data.max_time,
-      time_wait: +dataJson.data.time_wait
+      time_wait: +dataJson.data.time_wait,
+      raw: dataJson
     }
     this.emit('raffle', raffleMessage)
   }
@@ -124,7 +135,8 @@ class RoomListener extends EventEmitter {
       id: +dataJson.data.id,
       type: dataJson.data.type,
       title: '舰队抽奖',
-      time: +dataJson.data.lottery.time
+      time: +dataJson.data.lottery.time,
+      raw: dataJson
     }
     this.emit('lottery', lotteryMessage)
   }
@@ -143,7 +155,8 @@ class RoomListener extends EventEmitter {
       id: +dataJson.data.id,
       type: 'pk',
       title: dataJson.data.title,
-      time: +dataJson.data.time
+      time: +dataJson.data.time,
+      raw: dataJson
     }
     this.emit('pklottery', raffleMessage)
   }
@@ -175,10 +188,47 @@ class RoomListener extends EventEmitter {
         type: 'beatStorm',
         title: '节奏风暴',
         // @ts-ignore
-        time: beatStormData.time
+        time: beatStormData.time,
+        raw: dataJson
       }
       this.emit('beatStorm', beatStormMessage)
     }
+  }
+  /**
+   * 监听天选时刻消息
+   *
+   * @private
+   * @param {ANCHOR_LOT_START} dataJson
+   * @memberof RoomListener
+   */
+  private _AnchorLotHandler(dataJson: ANCHOR_LOT_START) {
+    if (dataJson.data === undefined || dataJson.data.id === undefined) return
+    const anchorLotMessage: anchorLotMessage = {
+      cmd: 'anchorLot',
+      roomID: dataJson._roomid,
+      id: +dataJson.data.id,
+      title: dataJson.data.award_name,
+      raw: dataJson
+    }
+    this.emit('anchorLot', anchorLotMessage)
+  }
+  /**
+   * 监听宝箱抽奖消息
+   *
+   * @private
+   * @param {BOX_ACTIVITY_START} dataJson
+   * @memberof RoomListener
+   */
+  private _BoxActivityHandler(dataJson: BOX_ACTIVITY_START) {
+    if (dataJson.data === undefined || dataJson.data.activity_id === undefined) return
+    const boxActivityMessage: boxActivityMessage = {
+      cmd: 'boxActivity',
+      roomID: dataJson._roomid,
+      id: +dataJson.data.activity_id,
+      title: dataJson.data.title,
+      raw: dataJson
+    }
+    this.emit('boxActivity', boxActivityMessage)
   }
   /**
    * 写入数据库
@@ -209,8 +259,8 @@ class RoomListener extends EventEmitter {
    * @memberof RoomListener
    */
   private async _getMasterID(roomID: number): Promise<number> {
-    const getRoomInit: requestOptions = {
-      uri: `${Options._.config.apiLiveOrigin}/room/v1/Room/mobileRoomInit?id=${roomID}}`,
+    const getRoomInit: XHRoptions = {
+      uri: `https://api.live.bilibili.com/room/v1/Room/mobileRoomInit?id=${roomID}}`,
       json: true
     }
     const roomInit = await tools.XHR<roomInit>(getRoomInit, 'Android')

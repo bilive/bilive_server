@@ -10,7 +10,7 @@ class myDB {
    * 加载
    *
    * @returns {(Promise<Error | null>)}
-   * @memberof newdb
+   * @memberof myDB
    */
   public load(): Promise<Error | null> {
     return new Promise(resolve => {
@@ -23,12 +23,24 @@ class myDB {
     })
   }
   /**
+   * 插入
+   *
+   * @param {*} query
+   * @returns {(Promise<Error | null>)}
+   * @memberof myDB
+   */
+  public insert(query: any): Promise<Error | null> {
+    return new Promise(resolve => {
+      this.__db.insert(query, (err: Error | null) => resolve(err))
+    })
+  }
+  /**
    * 查找
    *
    * @template T
    * @param {*} query
    * @returns {(Promise<Error | T[]>)}
-   * @memberof newdb
+   * @memberof myDB
    */
   public find<T>(query: any): Promise<Error | T[]> {
     return new Promise(resolve => {
@@ -41,7 +53,7 @@ class myDB {
    * @template T
    * @param {*} query
    * @returns {(Promise<Error | T>)}
-   * @memberof newdb
+   * @memberof myDB
    */
   public findOne<T>(query: any): Promise<Error | T | null> {
     return new Promise(resolve => {
@@ -55,7 +67,7 @@ class myDB {
    * @param {*} updateQuery
    * @param {Nedb.UpdateOptions} [options]
    * @returns {(Promise<Error | null>)}
-   * @memberof newdb
+   * @memberof myDB
    */
   public update(query: any, updateQuery: any, options?: Nedb.UpdateOptions): Promise<Error | null> {
     return new Promise(resolve => {

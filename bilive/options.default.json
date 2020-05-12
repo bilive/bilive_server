@@ -6,9 +6,6 @@
     "protocol": "admin"
   },
   "config": {
-    "liveOrigin": "https://live.bilibili.com",
-    "apiLiveOrigin": "https://api.live.bilibili.com",
-    "apiVCOrigin": "https://api.vc.bilibili.com",
     "excludeCMD": [],
     "sysmsg": ""
   },
@@ -21,24 +18,11 @@
     "raffle": false,
     "lottery": false,
     "pklottery": false,
-    "beatStorm": false
+    "beatStorm": false,
+    "anchorLot": false,
+    "boxActivity": false
   },
   "info": {
-    "liveOrigin": {
-      "description": "直播首页",
-      "tip": "直播首页地址",
-      "type": "string"
-    },
-    "apiLiveOrigin": {
-      "description": "直播API",
-      "tip": "直播API地址",
-      "type": "string"
-    },
-    "apiVCOrigin": {
-      "description": "直播消息API",
-      "tip": "直播消息API地址",
-      "type": "string"
-    },
     "excludeCMD": {
       "description": "排除消息",
       "tip": "日志上排除的房间消息",
@@ -87,6 +71,16 @@
     "beatStorm": {
       "description": "节奏风暴",
       "tip": "是否向该用户组发送节奏风暴消息",
+      "type": "boolean"
+    },
+    "anchorLot": {
+      "description": "天选时刻",
+      "tip": "是否向该用户组发送天选时刻消息",
+      "type": "boolean"
+    },
+    "boxActivity": {
+      "description": "宝箱抽奖",
+      "tip": "是否向该用户组发送宝箱抽奖消息",
       "type": "boolean"
     }
   }

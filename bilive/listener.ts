@@ -1,10 +1,8 @@
-import { Options as requestOptions } from 'request'
 import { EventEmitter } from 'events'
 import tools from './lib/tools'
 import AppClient from './lib/app_client'
 import DMclient from './dm_client_re'
 import RoomListener from './roomlistener'
-import Options from './options'
 /**
  * 监听服务器消息
  *
@@ -56,6 +54,22 @@ class Listener extends EventEmitter {
    */
   private _beatStormID: Set<number> = new Set()
   /**
+   * 天选时刻ID
+   *
+   * @private
+   * @type {Set<number>}
+   * @memberof Listener
+   */
+  private _anchorLotID: Set<number> = new Set()
+  /**
+   * 宝箱抽奖ID
+   *
+   * @private
+   * @type {Set<number>}
+   * @memberof Listener
+   */
+  private _boxActivityID: Set<number> = new Set()
+  /**
    * 消息缓存
    *
    * @private
@@ -81,6 +95,8 @@ class Listener extends EventEmitter {
   private _RoomListener!: RoomListener
   //@ts-ignore
   private _loop: NodeJS.Timer
+  //@ts-ignore
+  private _updateRoomTimer: NodeJS.Timer
   /**
    * 开始监听
    *
@@ -90,6 +106,10 @@ class Listener extends EventEmitter {
     this.updateAreaRoom()
     // 3s清空一次消息缓存
     this._loop = setInterval(() => this._MSGCache.clear(), 3 * 1000)
+    // 10min更新一次房间
+    this._updateRoomTimer = setInterval(() => {
+      this.updateAreaRoom()
+    }, 10 * 60 * 1000)
     // 房间
     this._RoomListener = new RoomListener()
     this._RoomListener
@@ -97,6 +117,8 @@ class Listener extends EventEmitter {
       .on('lottery', (lotteryMessage: lotteryMessage) => this._RaffleHandler(lotteryMessage))
       .on('pklottery', (lotteryMessage: lotteryMessage) => this._RaffleHandler(lotteryMessage))
       .on('beatStorm', (beatStormMessage: beatStormMessage) => this._RaffleHandler(beatStormMessage))
+      .on('anchorLot', (anchorLotMessage: anchorLotMessage) => this._RaffleHandler(anchorLotMessage))
+      .on('boxActivity', (boxActivityMessage: boxActivityMessage) => this._RaffleHandler(boxActivityMessage))
       .Start()
   }
   /**
@@ -107,7 +129,7 @@ class Listener extends EventEmitter {
   public async updateAreaRoom() {
     // 获取直播列表
     const getAllList = await tools.XHR<getAllList>({
-      uri: `${Options._.config.apiLiveOrigin}/room/v2/AppIndex/getAllList?${AppClient.baseQuery}`,
+      uri: `https://api.live.bilibili.com/room/v2/AppIndex/getAllList?${AppClient.signQueryBase()}`,
       json: true
     }, 'Android')
     if (getAllList !== undefined && getAllList.response.statusCode === 200 && getAllList.body.code === 0) {
@@ -123,8 +145,7 @@ class Listener extends EventEmitter {
         if (this._DMclient.has(roomID)) return
         const newDMclient = new DMclient({ roomID })
         newDMclient
-          .on('SYS_MSG', dataJson => this._RaffleCheck(dataJson))
-          .on('SYS_GIFT', dataJson => this._RaffleCheck(dataJson))
+          .on('NOTICE_MSG', dataJson => this._RaffleCheck(dataJson))
           .Connect()
         this._DMclient.set(roomID, newDMclient)
       })
@@ -151,17 +172,17 @@ class Listener extends EventEmitter {
    * 检查房间抽奖raffle信息
    *
    * @private
-   * @param {(SYS_MSG | SYS_GIFT)} dataJson
+   * @param {NOTICE_MSG} dataJson
    * @memberof Listener
    */
-  private async _RaffleCheck(dataJson: SYS_MSG | SYS_GIFT) {
-    if (dataJson.real_roomid === undefined || this._MSGCache.has(dataJson.msg_text)) return
-    this._MSGCache.add(dataJson.msg_text)
+  private async _RaffleCheck(dataJson: NOTICE_MSG) {
+    if (dataJson.real_roomid === undefined || this._MSGCache.has(dataJson.msg_common)) return
+    this._MSGCache.add(dataJson.msg_common)
     const roomID = dataJson.real_roomid
     // 等待3s, 防止土豪刷屏
     await tools.Sleep(3000)
-    const _lotteryInfo: requestOptions = {
-      uri: `${Options._.config.apiLiveOrigin}/xlive/lottery-interface/v1/lottery/getLotteryInfo?${AppClient.signQueryBase(`roomid=${roomID}`)}`,
+    const _lotteryInfo: XHRoptions = {
+      uri: `https://api.live.bilibili.com/xlive/lottery-interface/v1/lottery/getLotteryInfo?${AppClient.signQueryBase(`roomid=${roomID}`)}`,
       json: true
     }
     const lotteryInfo = await tools.XHR<lotteryInfo>(_lotteryInfo, 'Android')
@@ -176,7 +197,8 @@ class Listener extends EventEmitter {
           title: data.title,
           time: +data.time_wait,
           max_time: +data.max_time,
-          time_wait: +data.time_wait
+          time_wait: +data.time_wait,
+          raw: ''
         }
         this._RaffleHandler(message)
       })
@@ -186,10 +208,10 @@ class Listener extends EventEmitter {
    * 监听抽奖消息
    *
    * @private
-   * @param {raffleMessage | lotteryMessage | beatStormMessage} raffleMessage
+   * @param {raffleMessage | lotteryMessage | beatStormMessage | anchorLotMessage | boxActivityMessage} raffleMessage
    * @memberof Listener
    */
-  private _RaffleHandler(raffleMessage: raffleMessage | lotteryMessage | beatStormMessage) {
+  private _RaffleHandler(raffleMessage: raffleMessage | lotteryMessage | beatStormMessage | anchorLotMessage | boxActivityMessage) {
     const { cmd, id, roomID } = raffleMessage
     switch (cmd) {
       case 'raffle':
@@ -208,11 +230,20 @@ class Listener extends EventEmitter {
         if (this._beatStormID.has(id)) return
         this._beatStormID.add(id)
         break
+      case 'anchorLot':
+        if (this._anchorLotID.has(id)) return
+        this._anchorLotID.add(id)
+        break
+      case 'boxActivity':
+        if (this._boxActivityID.has(id)) return
+        this._boxActivityID.add(id)
+        break
       default:
         return
     }
     // 更新时间
     this._lastUpdate = Date.now()
+    this.clearAllID()
     this.emit(cmd, raffleMessage)
     this._RoomListener.AddRoom(roomID)
     tools.Log(`房间 ${roomID} 开启了第 ${id} 轮${raffleMessage.title}`)

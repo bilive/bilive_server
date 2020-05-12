@@ -2,7 +2,6 @@ import fs from 'fs'
 import util from 'util'
 import { EventEmitter } from 'events'
 const FSwriteFile = util.promisify(fs.writeFile)
-
 /**
  *
  *

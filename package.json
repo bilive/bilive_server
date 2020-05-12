@@ -1,6 +1,6 @@
 {
   "name": "bilive_server",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "bilibili直播监控程序",
   "main": "index.js",
   "scripts": {
@@ -8,25 +8,26 @@
     "build:tsc": "tsc -p tsconfig.json || exit 0",
     "build:copy": "cp bilive/options.default.json build/bilive/",
     "build:copy:windows": "copy bilive\\options.default.json build\\bilive\\ /Y",
-    "clean": "rimraf build",
+    "clean": "npm-run-posix-or-windows rmbuild",
+    "rmbuild": "rm -rf build",
+    "rmbuild:windows": "rmdir /S /Q build || exit 0",
     "start": "node build/app.js"
   },
   "author": "lzghzr",
   "license": "MIT",
   "devDependencies": {
-    "@types/nedb": "^1.8.7",
-    "@types/node": "^12.0.8",
-    "@types/nodemailer": "^4.6.8",
-    "@types/request": "^2.48.1",
-    "@types/ws": "^6.0.1",
+    "@types/nedb": "^1.8.9",
+    "@types/node": "^13.9.0",
+    "@types/tough-cookie": "^2.3.6",
+    "@types/ws": "^7.2.2",
     "npm-run-posix-or-windows": "^2.0.2",
-    "rimraf": "^2.6.3",
-    "typescript": "^3.5.2"
+    "typescript": "^3.8.3"
   },
   "dependencies": {
+    "form-data": "^3.0.0",
+    "got": "^10.6.0",
     "nedb": "^1.8.0",
-    "nodemailer": "^4.7.0",
-    "request": "^2.88.0",
-    "ws": "^6.2.1"
+    "tough-cookie": "^3.0.1",
+    "ws": "^7.2.3"
   }
 }

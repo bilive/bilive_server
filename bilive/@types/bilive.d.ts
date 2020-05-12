@@ -20,18 +20,13 @@ interface server {
   protocol: string
 }
 interface config {
-  [index: string]: string | string[]
-  liveOrigin: string
-  apiVCOrigin: string
-  apiLiveOrigin: string
+  [x: string]: boolean | number | number[] | string | string[]
   excludeCMD: string[]
   sysmsg: string
 }
-interface userCollection {
-  [index: string]: userData
-}
+type userCollection = Record<string, userData>
 interface userData {
-  [index: string]: string | boolean
+  [x: string]: boolean | number | number[] | string | string[]
   status: boolean
   userHash: string
   welcome: string
@@ -40,59 +35,17 @@ interface userData {
   lottery: boolean
   pklottery: boolean
   beatStorm: boolean
+  anchorLot: boolean
+  boxActivity: boolean
 }
-interface optionsInfo {
-  [index: string]: configInfoData
-  liveOrigin: configInfoData
-  apiVCOrigin: configInfoData
-  apiLiveOrigin: configInfoData
-  excludeCMD: configInfoData
-  sysmsg: configInfoData
-  status: configInfoData
-  userHash: configInfoData
-  welcome: configInfoData
-  usermsg: configInfoData
-  raffle: configInfoData
-  lottery: configInfoData
-  pklottery: configInfoData
-  beatStorm: configInfoData
+type optionsInfo = {
+  [x in keyof (config & userData)]: configInfoData
 }
 interface configInfoData {
   description: string
   tip: string
   type: string
   cognate?: string
-}
-/*******************
- ****** User ******
- *******************/
-interface AppClient {
-  readonly actionKey: string
-  readonly platform: string
-  readonly appKey: string
-  readonly build: string
-  readonly device: string
-  readonly mobiApp: string
-  readonly TS: number
-  readonly RND: number
-  readonly DeviceID: string
-  readonly baseQuery: string
-  signQuery(params: string, ts?: boolean): string
-  signQueryBase(params?: string): string
-  readonly status: typeof status
-  captcha: string
-  userName: string
-  passWord: string
-  biliUID: number
-  accessToken: string
-  refreshToken: string
-  cookieString: string
-  headers: Headers
-  init(): Promise<void>
-  getCaptcha(): Promise<captchaResponse>
-  login(): Promise<loginResponse>
-  logout(): Promise<logoutResponse>
-  refresh(): Promise<loginResponse>
 }
 /*******************
  **** dm_client ****
@@ -106,6 +59,7 @@ interface DMclientOptions {
   roomID?: number
   userID?: number
   protocol?: DMclientProtocol
+  key?: string
 }
 type DMclientProtocol = 'socket' | 'flash' | 'ws' | 'wss'
 type DMerror = DMclientError | DMdanmakuError
@@ -148,9 +102,11 @@ interface danmuInfoDataIPList {
  *******************/
 declare enum appStatus {
   'success' = 0,
-  'captcha' = 1,
-  'error' = 2,
-  'httpError' = 3
+  'error' = 1,
+  'httpError' = 2,
+  'captcha' = 3,
+  'validate' = 4,
+  'authcode' = 5,
 }
 /**
  * 公钥返回
@@ -174,7 +130,10 @@ interface getKeyResponseData {
 interface authResponse {
   ts: number
   code: number
-  data: authResponseData
+  data: authResponseData & authResponseTokeninfo
+}
+interface authResponseData {
+  url: string
 }
 interface authResponseData {
   status: number
@@ -217,7 +176,7 @@ interface loginResponseSuccess {
   data: authResponse
 }
 interface loginResponseCaptcha {
-  status: appStatus.captcha
+  status: appStatus.captcha | appStatus.validate | appStatus.authcode
   data: authResponse
 }
 interface loginResponseError {
@@ -256,9 +215,63 @@ interface captchaResponseError {
   status: appStatus.error
   data: XHRresponse<Buffer> | undefined
 }
+/**
+ * 二维码返回
+ *
+ * @interface authcodeResponse
+ */
+interface authcodeResponse {
+  code: number
+  message: string
+  ttl: number
+  data: authcodeResponseData
+}
+interface authcodeResponseData {
+  auth_code: string
+  url: string
+}
+/**
+ * 二维码返回信息
+ */
+type qrcodeResponse = qrcodeResponseSuccess | qrcodeResponseError | qrcodeResponseHttp
+interface qrcodeResponseSuccess {
+  status: appStatus.success
+  data: authcodeResponse
+}
+interface qrcodeResponseError {
+  status: appStatus.error
+  data: authcodeResponse
+}
+interface qrcodeResponseHttp {
+  status: appStatus.httpError
+  data: XHRresponse<authcodeResponse> | undefined
+}
 /*******************
  ****** tools ******
  *******************/
+/**
+ * XHR设置
+ * 因为request已经为Deprecated状态, 为了兼容把设置项缩小, 可以会影响一些插件
+ *
+ * @interface XHRoptions
+ */
+interface XHRoptions {
+  /** @deprecated 为了兼容request, 现在可以使用url */
+  uri?: string | URL
+  url?: string | URL
+  // OutgoingHttpHeaders包含number, 导致无法兼容got
+  headers?: import('http').IncomingHttpHeaders
+  method?: import('got').Method
+  body?: string | Buffer
+  /** @deprecated 为了兼容request, 现在可以使用cookieJar */
+  jar?: import('tough-cookie').CookieJar
+  cookieJar?: import('tough-cookie').CookieJar
+  /** 为了兼容request, 保留null */
+  encoding?: BufferEncoding | null
+  /** @deprecated 为了兼容request, 现在可以使用responseType */
+  json?: boolean
+  responseType?: 'json' | 'buffer' | 'text'
+}
 /**
  * XHR返回
  *
@@ -266,9 +279,7 @@ interface captchaResponseError {
  * @template T
  */
 interface XHRresponse<T> {
-  response: {
-    statusCode: number
-  }
+  response: import('got').Response
   body: T
 }
 /**
@@ -278,17 +289,6 @@ interface XHRresponse<T> {
  */
 interface systemMSG {
   message: string
-  options: options
-}
-/**
- * Server酱
- *
- * @interface serverChan
- */
-interface serverChan {
-  errno: number
-  errmsg: string
-  dataset: string
 }
 /*******************
  ******* db ********
@@ -304,6 +304,10 @@ interface roomList {
   beatStorm: number
   smallTV: number
   raffle: number
+  lottery: number
+  pklottery: number
+  anchorLot: number
+  boxActivity: number
   updateTime: number
 }
 /*******************
@@ -323,6 +327,7 @@ interface raffleMessage {
   time: number
   max_time: number
   time_wait: number
+  raw: '' | TV_START | RAFFLE_START
 }
 /**
  * 消息格式
@@ -336,6 +341,7 @@ interface lotteryMessage {
   type: string
   title: string
   time: number
+  raw: '' | LOTTERY_START | PK_LOTTERY_START
 }
 /**
  * 消息格式
@@ -349,6 +355,31 @@ interface beatStormMessage {
   type: string
   title: string
   time: number
+  raw: '' | SPECIAL_GIFT
+}
+/**
+ * 消息格式
+ *
+ * @interface anchorLotMessage
+ */
+interface anchorLotMessage {
+  cmd: 'anchorLot'
+  roomID: number
+  id: number
+  title: string
+  raw: '' | ANCHOR_LOT_START
+}
+/**
+ * 消息格式
+ *
+ * @interface boxActivityMessage
+ */
+interface boxActivityMessage {
+  cmd: 'boxActivity'
+  roomID: number
+  id: number
+  title: string
+  raw: '' | BOX_ACTIVITY_START
 }
 /**
  * 消息格式
@@ -359,7 +390,7 @@ interface systemMessage {
   cmd: 'sysmsg'
   msg: string
 }
-type message = raffleMessage | lotteryMessage | beatStormMessage | systemMessage
+type message = raffleMessage | lotteryMessage | beatStormMessage | anchorLotMessage | boxActivityMessage | systemMessage
 /*******************
  **** listener *****
  *******************/

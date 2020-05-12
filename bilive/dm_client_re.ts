@@ -10,10 +10,10 @@ import DMclient from './lib/dm_client'
 class DMclientRE extends DMclient {
   /**
    * Creates an instance of DMclientRE.
-   * @param {DMclientOptions} [{ roomID = 23058, userID = 0, protocol = 'flash' }={}]
+   * @param {DMclientOptions} [{ roomID = 23058, userID = 0, protocol = 'socket' }={}]
    * @memberof DMclientRE
    */
-  constructor({ roomID = 23058, userID = 0, protocol = 'flash' }: DMclientOptions = {}) {
+  constructor({ roomID = 23058, userID = 0, protocol = 'socket' }: DMclientOptions = {}) {
     super({ roomID, userID, protocol })
     this.on('DMerror', error => tools.ErrorLog(error))
     this.on('close', () => this._ClientReConnect())
@@ -39,7 +39,7 @@ class DMclientRE extends DMclient {
       }
       else {
         this.reConnectTime++
-        this.Connect({ server: this._server, port: this.port })
+        this.Connect()
       }
     }, 3 * 1000)
   }

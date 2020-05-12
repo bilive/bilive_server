@@ -2,6 +2,7 @@ import fs from 'fs'
 import ws from 'ws'
 import http from 'http'
 import { randomBytes } from 'crypto'
+import { EventEmitter } from 'events'
 import tools from './lib/tools'
 import Options from './options'
 /**
@@ -9,7 +10,10 @@ import Options from './options'
  *
  * @class WSServer
  */
-class WSServer {
+class WSServer extends EventEmitter {
+  constructor() {
+    super()
+  }
   private _wsServer!: ws.Server
   private _clients: Map<string, Set<ws>> = new Map()
   private _adminClient!: ws
@@ -244,18 +248,38 @@ class WSServer {
    * @param {string} [protocol]
    * @memberof WSServer
    */
-  public PKLottery(lotteryMessage: message, protocol?: string) {
+  public PKLottery(lotteryMessage: lotteryMessage, protocol?: string) {
     this._Broadcast(lotteryMessage, 'pklottery', protocol)
   }
   /**
    * 节奏风暴
    *
-   * @param {beatStormInfo} beatStormInfo
+   * @param {beatStormMessage} beatStormMessage
    * @param {string} [protocol]
    * @memberof WSServer
    */
-  public BeatStorm(beatStormInfo: message, protocol?: string) {
-    this._Broadcast(beatStormInfo, 'beatStorm', protocol)
+  public BeatStorm(beatStormMessage: beatStormMessage, protocol?: string) {
+    this._Broadcast(beatStormMessage, 'beatStorm', protocol)
+  }
+  /**
+   * 天选时刻
+   *
+   * @param {anchorLotMessage} anchorLotMessage
+   * @param {string} [protocol]
+   * @memberof WSServer
+   */
+  public AchorLot(anchorLotMessage: anchorLotMessage, protocol?: string) {
+    this._Broadcast(anchorLotMessage, 'anchorLot', protocol)
+  }
+  /**
+   * 宝箱抽奖
+   *
+   * @param {boxActivityMessage} boxActivityMessage
+   * @param {string} [protocol]
+   * @memberof WSServer
+   */
+  public BoxActivity(boxActivityMessage: boxActivityMessage, protocol?: string) {
+    this._Broadcast(boxActivityMessage, 'boxActivity', protocol)
   }
   /**
    * 广播消息
