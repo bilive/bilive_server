@@ -1,8 +1,8 @@
-FROM node:12
+FROM node:14-alpine
 
-WORKDIR /srv/bilive_client
-COPY . /srv/bilive_client
-RUN npm install && npm run build
+WORKDIR /app
+COPY . /app
+RUN mkdir /app/options && cp /app/nedb/roomList.db /app/options/roomList.db && npm install && npm run build
 
-EXPOSE 20080/tcp
+EXPOSE 20080
 CMD [ "npm", "start" ]
